@@ -172,13 +172,23 @@
           <h2 style="font-size:1.15rem; font-weight:700;">Today's Attendance Roster</h2>
           <p style="font-size:0.82rem; color:var(--text-muted);" id="todayDateStr"></p>
         </div>
-        <input type="text" id="searchInput" class="search-input" placeholder="Search by name or USN..." />
+        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+          <div style="display:flex; gap:6px;">
+            <button id="filterPresentBtn" class="btn btn-primary" onclick="setRosterTab('present')" style="padding:6px 14px; font-size:0.82rem; cursor:pointer;">
+              <i class="fa-solid fa-user-check"></i> Present (<span id="rosterPresentCount">0</span>)
+            </button>
+            <button id="filterAbsentBtn" class="btn btn-secondary" onclick="setRosterTab('absent')" style="padding:6px 14px; font-size:0.82rem; cursor:pointer;">
+              <i class="fa-solid fa-user-xmark" style="color:var(--danger);"></i> Absent List (<span id="rosterAbsentCount">0</span>)
+            </button>
+          </div>
+          <input type="text" id="searchInput" class="search-input" placeholder="Search by name or USN..." />
+        </div>
       </div>
 
       <div class="table-container">
         <table>
           <thead>
-            <tr>
+            <tr id="rosterTheadRow">
               <th>USN</th>
               <th>Student Name</th>
               <th>Time</th>
@@ -262,43 +272,123 @@
     document.getElementById('todayDateStr').textContent = `Date: ${today}`;
 
     // Load Attendance Roster
-    let allRecords = [];
+    let activeRosterTab = 'present';
+    let presentRecords = [];
+    let absentRecords = [];
+
+    function setRosterTab(tab) {
+      activeRosterTab = tab;
+      const pBtn = document.getElementById('filterPresentBtn');
+      const aBtn = document.getElementById('filterAbsentBtn');
+      const thead = document.getElementById('rosterTheadRow');
+
+      if (tab === 'present') {
+        pBtn.className = 'btn btn-primary';
+        aBtn.className = 'btn btn-secondary';
+        thead.innerHTML = `
+          <th>USN</th>
+          <th>Student Name</th>
+          <th>Time</th>
+          <th>Method</th>
+          <th>Status</th>
+        `;
+      } else {
+        pBtn.className = 'btn btn-secondary';
+        aBtn.className = 'btn btn-danger';
+        thead.innerHTML = `
+          <th>USN</th>
+          <th>Student Name</th>
+          <th>Date</th>
+          <th>Status</th>
+          <th>Action</th>
+        `;
+      }
+      renderRoster();
+    }
+
     async function loadRoster() {
       try {
-        const res = await fetch(`/api/attendance_records?date=${today}`);
-        allRecords = await res.json();
-        renderRoster(allRecords);
-        document.getElementById('presentCount').textContent = allRecords.length;
+        const [resP, resA] = await Promise.all([
+          fetch(`/api/attendance_records?date=${today}`),
+          fetch(`/api/absent_students?date=${today}`)
+        ]);
+        presentRecords = await resP.json();
+        absentRecords = await resA.json();
+
+        document.getElementById('presentCount').textContent = presentRecords.length;
+        document.getElementById('rosterPresentCount').textContent = presentRecords.length;
+        document.getElementById('rosterAbsentCount').textContent = absentRecords.length;
+
+        renderRoster();
       } catch (err) {
         console.error('Roster error:', err);
       }
     }
 
-    function renderRoster(records) {
+    function renderRoster() {
       const tbody = document.getElementById('rosterTableBody');
       const filter = document.getElementById('searchInput').value.toLowerCase().trim();
+      const records = (activeRosterTab === 'present') ? presentRecords : absentRecords;
+
       const filtered = records.filter(r => 
         (r.name && r.name.toLowerCase().includes(filter)) || 
         (r.usn && r.usn.toLowerCase().includes(filter))
       );
 
       if (filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding:24px;">No attendance records found for today.</td></tr>`;
+        if (activeRosterTab === 'present') {
+          tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding:24px;">No students marked present yet today.</td></tr>`;
+        } else {
+          tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--success); padding:24px;"><i class="fa-solid fa-circle-check"></i> All enrolled students are present today! Zero absentees.</td></tr>`;
+        }
         return;
       }
 
-      tbody.innerHTML = filtered.map(r => `
-        <tr>
-          <td><strong>${r.usn}</strong></td>
-          <td>${r.name}</td>
-          <td><span style="color:var(--text-muted);">${r.time}</span></td>
-          <td><span class="event-badge">${r.method || 'CCTV'}</span></td>
-          <td><span style="color:var(--success); font-weight:600;"><i class="fa-solid fa-circle-check"></i> ${r.status}</span></td>
-        </tr>
-      `).join('');
+      if (activeRosterTab === 'present') {
+        tbody.innerHTML = filtered.map(r => `
+          <tr>
+            <td><strong>${r.usn}</strong></td>
+            <td>${r.name}</td>
+            <td><span style="color:var(--text-muted);">${r.time}</span></td>
+            <td><span class="event-badge">${r.method || 'CCTV'}</span></td>
+            <td><span style="color:var(--success); font-weight:600;"><i class="fa-solid fa-circle-check"></i> ${r.status}</span></td>
+          </tr>
+        `).join('');
+      } else {
+        tbody.innerHTML = filtered.map(r => `
+          <tr>
+            <td><strong>${r.usn}</strong></td>
+            <td>${r.name}</td>
+            <td><span style="color:var(--text-muted);">${r.date}</span></td>
+            <td><span style="background:rgba(239,68,68,0.15); color:var(--danger); padding:4px 8px; border-radius:6px; font-size:0.75rem; font-weight:600;"><i class="fa-solid fa-circle-xmark"></i> Absent</span></td>
+            <td>
+              <button class="btn btn-primary" onclick="markAbsentStudentFromRoster('${r.usn}')" style="padding:4px 10px; font-size:0.78rem;">
+                <i class="fa-solid fa-check"></i> Mark Present
+              </button>
+            </td>
+          </tr>
+        `).join('');
+      }
     }
 
-    document.getElementById('searchInput').addEventListener('input', () => renderRoster(allRecords));
+    async function markAbsentStudentFromRoster(usn) {
+      try {
+        const res = await fetch('/api/attendance', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ manual_usn: usn })
+        });
+        if (res.ok) {
+          playChime();
+          loadRoster();
+          pollEvents();
+        }
+      } catch (e) {
+        alert('Error marking: ' + e);
+      }
+    }
+
+    document.getElementById('searchInput').addEventListener('input', () => renderRoster());
 
     // Poll live recognition events
     const eventsContainer = document.getElementById('eventsContainer');

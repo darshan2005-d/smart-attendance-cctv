@@ -354,6 +354,30 @@ def mark_attendance(usn: str, name: str, date_str: Optional[str] = None, time_st
     return True, f"Attendance successfully marked for {resolved_name}"
 
 
+def get_absent_students(date_str: Optional[str] = None) -> List[Dict]:
+    """Returns list of enrolled students who have not yet been marked present for the given date."""
+    if not date_str:
+        date_str = datetime.now().strftime("%Y-%m-%d")
+
+    marked_usns = get_marked_usns(date_str)
+    conn = get_db_connection()
+    try:
+        rows = conn.execute("SELECT usn, name FROM students ORDER BY usn ASC").fetchall()
+        absent = []
+        for r in rows:
+            u = r["usn"]
+            if u not in marked_usns:
+                absent.append({
+                    "usn": u,
+                    "name": r["name"],
+                    "status": "Absent",
+                    "date": date_str
+                })
+        return absent
+    finally:
+        conn.close()
+
+
 def get_attendance_records(date_str: Optional[str] = None) -> List[Dict]:
     if not date_str:
         date_str = datetime.now().strftime("%Y-%m-%d")

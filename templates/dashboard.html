@@ -146,13 +146,13 @@
         <div class="metric-sub" style="color:var(--success);"><i class="fa-solid fa-circle-check"></i> Verified via CCTV</div>
       </div>
 
-      <div class="metric-card">
+      <div class="metric-card" style="cursor:pointer;" onclick="switchTab('absent')" title="Click to view Absent List">
         <div class="metric-header">
           <span class="metric-label">Absent Students</span>
           <div class="metric-icon icon-amber"><i class="fa-solid fa-user-xmark"></i></div>
         </div>
         <div class="metric-val" id="absentCount">0</div>
-        <div class="metric-sub"><i class="fa-solid fa-clock"></i> Not yet detected</div>
+        <div class="metric-sub" style="color:#f59e0b;"><i class="fa-solid fa-list-check"></i> Click to view Absent List</div>
       </div>
 
       <div class="metric-card">
@@ -169,18 +169,30 @@
     <div class="dashboard-grid">
       <!-- Left Column: Today's Attendance Table -->
       <div class="card">
-        <div class="card-title">
-          <span><i class="fa-solid fa-clipboard-user" style="color:var(--primary); margin-right:8px;"></i> Today's Attendance Activity</span>
+        <div class="card-title" style="margin-bottom:12px;">
+          <span><i class="fa-solid fa-clipboard-user" style="color:var(--primary); margin-right:8px;"></i> Classroom Attendance Register</span>
+        </div>
+
+        <!-- Filter Tabs: Present vs Absent List -->
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
+          <div style="display:flex; gap:8px;">
+            <button id="tabPresent" class="btn btn-sm btn-primary" onclick="switchTab('present')" style="cursor:pointer;">
+              <i class="fa-solid fa-user-check"></i> Present (<span id="tabPresentCount">0</span>)
+            </button>
+            <button id="tabAbsent" class="btn btn-sm btn-secondary" onclick="switchTab('absent')" style="cursor:pointer;">
+              <i class="fa-solid fa-user-xmark" style="color:var(--danger);"></i> Absent List (<span id="tabAbsentCount">0</span>)
+            </button>
+          </div>
           <div style="display:flex; gap:8px;">
             <a href="/attendance" class="btn btn-secondary btn-sm"><i class="fa-solid fa-expand"></i> Full Monitor</a>
-            <a href="/api/export/csv" class="btn btn-secondary btn-sm"><i class="fa-solid fa-download"></i> CSV</a>
+            <a id="exportCsvBtn" href="/api/export/csv" class="btn btn-secondary btn-sm"><i class="fa-solid fa-download"></i> Export CSV</a>
           </div>
         </div>
 
         <div class="table-responsive">
           <table>
             <thead>
-              <tr>
+              <tr id="tableHeaderRow">
                 <th>USN</th>
                 <th>Name</th>
                 <th>Time</th>
@@ -283,33 +295,112 @@
         document.getElementById('presentCount').textContent = data.present_count || 0;
         document.getElementById('absentCount').textContent = data.absent_count || 0;
         document.getElementById('attendanceRate').textContent = `${data.attendance_rate || 0}%`;
+        document.getElementById('tabPresentCount').textContent = data.present_count || 0;
+        document.getElementById('tabAbsentCount').textContent = data.absent_count || 0;
       } catch (err) {
         console.error('Stats error:', err);
       }
     }
 
+    let currentTab = 'present';
+
+    function switchTab(tab) {
+      currentTab = tab;
+      const tabPresent = document.getElementById('tabPresent');
+      const tabAbsent = document.getElementById('tabAbsent');
+      const exportCsvBtn = document.getElementById('exportCsvBtn');
+
+      if (tab === 'present') {
+        tabPresent.className = 'btn btn-sm btn-primary';
+        tabAbsent.className = 'btn btn-sm btn-secondary';
+        exportCsvBtn.href = `/api/export/csv?date=${today}`;
+        exportCsvBtn.innerHTML = `<i class="fa-solid fa-download"></i> Export Present CSV`;
+        document.getElementById('tableHeaderRow').innerHTML = `
+          <th>USN</th>
+          <th>Name</th>
+          <th>Time</th>
+          <th>Method</th>
+          <th>Status</th>
+        `;
+      } else {
+        tabPresent.className = 'btn btn-sm btn-secondary';
+        tabAbsent.className = 'btn btn-sm btn-danger';
+        exportCsvBtn.href = `/api/export/absent_csv?date=${today}`;
+        exportCsvBtn.innerHTML = `<i class="fa-solid fa-download"></i> Export Absent CSV`;
+        document.getElementById('tableHeaderRow').innerHTML = `
+          <th>USN</th>
+          <th>Name</th>
+          <th>Date</th>
+          <th>Status</th>
+          <th>Action</th>
+        `;
+      }
+      loadAttendance();
+    }
+
     async function loadAttendance() {
       try {
-        const res = await fetch(`/api/attendance_records?date=${today}`);
-        const rows = await res.json();
         const tbody = document.getElementById('attendanceTbody');
+        if (currentTab === 'present') {
+          const res = await fetch(`/api/attendance_records?date=${today}`);
+          const rows = await res.json();
 
-        if (!rows || rows.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding:30px;">No students marked present yet today.</td></tr>`;
-          return;
+          if (!rows || rows.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding:30px;">No students marked present yet today.</td></tr>`;
+            return;
+          }
+
+          tbody.innerHTML = rows.map(r => `
+            <tr>
+              <td><strong>${r.usn}</strong></td>
+              <td>${r.name}</td>
+              <td><span style="color:var(--text-muted);">${r.time}</span></td>
+              <td><span style="background:rgba(59,130,246,0.15); color:var(--primary); padding:3px 8px; border-radius:6px; font-size:0.75rem; font-weight:600;">${r.method || 'CCTV'}</span></td>
+              <td><span style="color:var(--success); font-weight:600;"><i class="fa-solid fa-circle-check"></i> Present</span></td>
+            </tr>
+          `).join('');
+        } else {
+          // Absent List tab
+          const res = await fetch(`/api/absent_students?date=${today}`);
+          const rows = await res.json();
+
+          if (!rows || rows.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--success); padding:30px;"><i class="fa-solid fa-circle-check" style="font-size:1.5rem; margin-bottom:8px; display:block;"></i> All enrolled students are marked present today! 100% attendance!</td></tr>`;
+            return;
+          }
+
+          tbody.innerHTML = rows.map(r => `
+            <tr>
+              <td><strong>${r.usn}</strong></td>
+              <td>${r.name}</td>
+              <td><span style="color:var(--text-muted);">${r.date}</span></td>
+              <td><span style="background:rgba(239,68,68,0.15); color:var(--danger); padding:3px 8px; border-radius:6px; font-size:0.75rem; font-weight:600;"><i class="fa-solid fa-circle-xmark"></i> Absent</span></td>
+              <td>
+                <button class="btn btn-sm btn-primary" onclick="markStudentFromAbsent('${r.usn}')" style="padding:4px 10px; font-size:0.78rem;">
+                  <i class="fa-solid fa-check"></i> Mark Present
+                </button>
+              </td>
+            </tr>
+          `).join('');
         }
-
-        tbody.innerHTML = rows.map(r => `
-          <tr>
-            <td><strong>${r.usn}</strong></td>
-            <td>${r.name}</td>
-            <td><span style="color:var(--text-muted);">${r.time}</span></td>
-            <td><span style="background:rgba(59,130,246,0.15); color:var(--primary); padding:3px 8px; border-radius:6px; font-size:0.75rem; font-weight:600;">${r.method || 'CCTV'}</span></td>
-            <td><span style="color:var(--success); font-weight:600;"><i class="fa-solid fa-circle-check"></i> Present</span></td>
-          </tr>
-        `).join('');
       } catch (err) {
         console.error('Attendance error:', err);
+      }
+    }
+
+    async function markStudentFromAbsent(usn) {
+      try {
+        const res = await fetch('/api/attendance', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ manual_usn: usn })
+        });
+        if (res.ok) {
+          loadStats();
+          loadAttendance();
+        }
+      } catch (e) {
+        alert('Error marking attendance: ' + e);
       }
     }
 

@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -108,9 +108,12 @@
         <input type="date" id="datePicker" class="form-control" />
         <input type="text" id="searchFilter" class="form-control" style="width:240px;" placeholder="Search by name or USN..." />
       </div>
-      <div>
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
         <a id="downloadCsvBtn" class="btn btn-primary" href="/api/export/csv">
-          <i class="fa-solid fa-file-arrow-down"></i> Export Date to CSV
+          <i class="fa-solid fa-file-arrow-down"></i> Export Present CSV
+        </a>
+        <a id="downloadAbsentCsvBtn" class="btn btn-danger" href="/api/export/absent_csv" style="background:rgba(239,68,68,0.15); color:var(--danger); border:1px solid rgba(239,68,68,0.3);">
+          <i class="fa-solid fa-file-excel"></i> Export Absent CSV
         </a>
       </div>
     </div>
@@ -125,9 +128,11 @@
         <div class="lbl">Present on Date</div>
         <div class="val" id="sumPresent" style="color:var(--success);">0</div>
       </div>
-      <div class="summary-box">
+      <div class="summary-box" style="cursor:pointer;" onclick="setReportTab('absent')" title="Click to view Absent List">
         <div class="lbl">Absent on Date</div>
         <div class="val" id="sumAbsent" style="color:var(--warning);">0</div>
+        <span style="font-size:0.72rem; color:var(--text-muted);"><i class="fa-solid fa-list-check"></i> View Absentees</span>
+      </div>
       </div>
       <div class="summary-box">
         <div class="lbl">Attendance Rate</div>
@@ -137,11 +142,21 @@
 
     <!-- Table -->
     <div class="table-card">
-      <h3 style="font-size:1.1rem; font-weight:700; margin-bottom:12px;">Detailed Attendance Log (<span id="selectedDateLabel"></span>)</h3>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
+        <h3 style="font-size:1.1rem; font-weight:700;">Attendance Log (<span id="selectedDateLabel"></span>)</h3>
+        <div style="display:flex; gap:8px;">
+          <button id="repTabPresent" class="btn btn-sm btn-primary" onclick="setReportTab('present')" style="cursor:pointer; font-size:0.82rem;">
+            <i class="fa-solid fa-user-check"></i> Present (<span id="repPresentCount">0</span>)
+          </button>
+          <button id="repTabAbsent" class="btn btn-sm btn-secondary" onclick="setReportTab('absent')" style="cursor:pointer; font-size:0.82rem;">
+            <i class="fa-solid fa-user-xmark" style="color:var(--danger);"></i> Absent List (<span id="repAbsentCount">0</span>)
+          </button>
+        </div>
+      </div>
       <div class="table-container">
         <table>
           <thead>
-            <tr>
+            <tr id="repTheadRow">
               <th>USN</th>
               <th>Student Name</th>
               <th>Time</th>
@@ -163,62 +178,119 @@
     const reportsTbody = document.getElementById('reportsTbody');
     const selectedDateLabel = document.getElementById('selectedDateLabel');
     const downloadCsvBtn = document.getElementById('downloadCsvBtn');
+    const downloadAbsentCsvBtn = document.getElementById('downloadAbsentCsvBtn');
 
-    let currentRecords = [];
+    let currentReportTab = 'present';
+    let presentReportRecords = [];
+    let absentReportRecords = [];
 
     // Set today as default
     const today = new Date().toISOString().split('T')[0];
     datePicker.value = today;
 
+    function setReportTab(tab) {
+      currentReportTab = tab;
+      const pBtn = document.getElementById('repTabPresent');
+      const aBtn = document.getElementById('repTabAbsent');
+      const thead = document.getElementById('repTheadRow');
+
+      if (tab === 'present') {
+        pBtn.className = 'btn btn-sm btn-primary';
+        aBtn.className = 'btn btn-sm btn-secondary';
+        thead.innerHTML = `
+          <th>USN</th>
+          <th>Student Name</th>
+          <th>Time</th>
+          <th>Capture Method</th>
+          <th>Status</th>
+        `;
+      } else {
+        pBtn.className = 'btn btn-sm btn-secondary';
+        aBtn.className = 'btn btn-sm btn-danger';
+        thead.innerHTML = `
+          <th>USN</th>
+          <th>Student Name</th>
+          <th>Date</th>
+          <th>Status</th>
+          <th>Remarks</th>
+        `;
+      }
+      renderTable();
+    }
+
     async function fetchDateData(dateStr) {
       selectedDateLabel.textContent = dateStr;
       downloadCsvBtn.href = `/api/export/csv?date=${dateStr}`;
+      downloadAbsentCsvBtn.href = `/api/export/absent_csv?date=${dateStr}`;
 
       try {
-        const [statsRes, recsRes] = await Promise.all([
+        const [statsRes, recsRes, absentRes] = await Promise.all([
           fetch(`/api/stats?date=${dateStr}`),
-          fetch(`/api/attendance_records?date=${dateStr}`)
+          fetch(`/api/attendance_records?date=${dateStr}`),
+          fetch(`/api/absent_students?date=${dateStr}`)
         ]);
 
         const stats = await statsRes.json();
-        currentRecords = await recsRes.json();
+        presentReportRecords = await recsRes.json();
+        absentReportRecords = await absentRes.json();
 
         document.getElementById('sumTotal').textContent = stats.total_students || 0;
         document.getElementById('sumPresent').textContent = stats.present_count || 0;
         document.getElementById('sumAbsent').textContent = stats.absent_count || 0;
         document.getElementById('sumRate').textContent = `${stats.attendance_rate || 0}%`;
 
-        renderTable(currentRecords);
+        document.getElementById('repPresentCount').textContent = stats.present_count || 0;
+        document.getElementById('repAbsentCount').textContent = stats.absent_count || 0;
+
+        renderTable();
       } catch (err) {
         console.error('Report fetch error:', err);
       }
     }
 
-    function renderTable(records) {
+    function renderTable() {
       const q = searchFilter.value.toLowerCase().trim();
+      const records = (currentReportTab === 'present') ? presentReportRecords : absentReportRecords;
+
       const filtered = records.filter(r => 
         (r.name && r.name.toLowerCase().includes(q)) || 
         (r.usn && r.usn.toLowerCase().includes(q))
       );
 
       if (filtered.length === 0) {
-        reportsTbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding:30px;">No attendance records found for this date.</td></tr>`;
+        if (currentReportTab === 'present') {
+          reportsTbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding:30px;">No students marked present for this date.</td></tr>`;
+        } else {
+          reportsTbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--success); padding:30px;"><i class="fa-solid fa-circle-check"></i> Zero absentees! All enrolled students were present on this date.</td></tr>`;
+        }
         return;
       }
 
-      reportsTbody.innerHTML = filtered.map(r => `
-        <tr>
-          <td><strong>${r.usn}</strong></td>
-          <td>${r.name}</td>
-          <td><span style="color:var(--text-muted);">${r.time}</span></td>
-          <td><span style="background:rgba(59,130,246,0.15); color:var(--primary); padding:3px 8px; border-radius:6px; font-size:0.75rem; font-weight:600;">${r.method || 'CCTV'}</span></td>
-          <td><span style="color:var(--success); font-weight:600;"><i class="fa-solid fa-circle-check"></i> Present</span></td>
-        </tr>
-      `).join('');
+      if (currentReportTab === 'present') {
+        reportsTbody.innerHTML = filtered.map(r => `
+          <tr>
+            <td><strong>${r.usn}</strong></td>
+            <td>${r.name}</td>
+            <td><span style="color:var(--text-muted);">${r.time}</span></td>
+            <td><span style="background:rgba(59,130,246,0.15); color:var(--primary); padding:3px 8px; border-radius:6px; font-size:0.75rem; font-weight:600;">${r.method || 'CCTV'}</span></td>
+            <td><span style="color:var(--success); font-weight:600;"><i class="fa-solid fa-circle-check"></i> Present</span></td>
+          </tr>
+        `).join('');
+      } else {
+        reportsTbody.innerHTML = filtered.map(r => `
+          <tr>
+            <td><strong>${r.usn}</strong></td>
+            <td>${r.name}</td>
+            <td><span style="color:var(--text-muted);">${r.date}</span></td>
+            <td><span style="background:rgba(239,68,68,0.15); color:var(--danger); padding:3px 8px; border-radius:6px; font-size:0.75rem; font-weight:600;"><i class="fa-solid fa-circle-xmark"></i> Absent</span></td>
+            <td><span style="color:var(--text-muted); font-size:0.85rem;">Not detected on CCTV</span></td>
+          </tr>
+        `).join('');
+      }
     }
 
     datePicker.addEventListener('change', () => fetchDateData(datePicker.value));
-    searchFilter.addEventListener('input', () => renderTable(currentRecords));
+    searchFilter.addEventListener('input', () => renderTable());
 
     fetchDateData(today);
   </script>

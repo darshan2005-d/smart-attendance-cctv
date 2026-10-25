@@ -308,6 +308,15 @@ def get_attendance_records():
     return jsonify(records)
 
 
+@app.route("/api/absent_students", methods=["GET"])
+@login_required
+def get_absent_students_api():
+    """Returns list of all enrolled students who are absent on the given date."""
+    date_str = request.args.get("date") or datetime.now().strftime("%Y-%m-%d")
+    absent = database.get_absent_students(date_str)
+    return jsonify(absent)
+
+
 @app.route("/api/attendance_records", methods=["DELETE"])
 @login_required
 def clear_attendance_records():
@@ -464,6 +473,31 @@ def export_csv_api():
         output.getvalue(),
         mimetype="text/csv",
         headers={"Content-Disposition": f"attachment; filename=Attendance_{date_str}.csv"}
+    )
+
+
+@app.route("/api/export/absent_csv", methods=["GET"])
+@login_required
+def export_absent_csv_api():
+    date_str = request.args.get("date") or datetime.now().strftime("%Y-%m-%d")
+    records = database.get_absent_students(date_str)
+
+    output = io.StringIO()
+    writer = csv.DictWriter(output, fieldnames=["USN", "Name", "Date", "Status"])
+    writer.writeheader()
+    for r in records:
+        writer.writerow({
+            "USN": r.get("usn", ""),
+            "Name": r.get("name", ""),
+            "Date": r.get("date", date_str),
+            "Status": "Absent"
+        })
+
+    output.seek(0)
+    return Response(
+        output.getvalue(),
+        mimetype="text/csv",
+        headers={"Content-Disposition": f"attachment; filename=Absent_Students_{date_str}.csv"}
     )
 
 
