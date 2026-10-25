@@ -1,0 +1,387 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Student Enrollment & Registry | Smart Attendance</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --border: #334155;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --radius: 12px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; }
+    body { background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
+
+    /* Navbar */
+    .navbar { background: rgba(30, 41, 59, 0.95); backdrop-filter: blur(10px); border-bottom: 1px solid var(--border); padding: 14px 28px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    .brand { display: flex; align-items: center; gap: 12px; font-weight: 700; font-size: 1.15rem; color: #fff; text-decoration: none; }
+    .brand i { color: var(--primary); font-size: 1.4rem; }
+    .nav-links { display: flex; gap: 8px; list-style: none; }
+    .nav-links a { text-decoration: none; color: var(--text-muted); padding: 8px 16px; border-radius: 8px; font-size: 0.9rem; font-weight: 500; transition: all 0.2s; display: flex; align-items: center; gap: 8px; }
+    .nav-links a:hover, .nav-links a.active { color: #fff; background: rgba(59, 130, 246, 0.15); }
+    .nav-links a.active { color: var(--primary); font-weight: 600; }
+
+    /* Layout */
+    .container { max-width: 1280px; width: 100%; margin: 24px auto; padding: 0 20px; flex: 1; display: flex; flex-direction: column; gap: 24px; }
+    .header-section h1 { font-size: 1.7rem; font-weight: 700; }
+    .header-section p { color: var(--text-muted); font-size: 0.95rem; margin-top: 4px; }
+
+    .grid-layout { display: grid; grid-template-columns: 1.2fr 1fr; gap: 24px; }
+    @media (max-width: 960px) { .grid-layout { grid-template-columns: 1fr; } }
+
+    .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
+    .card-title { font-size: 1.15rem; font-weight: 600; margin-bottom: 18px; display: flex; align-items: center; gap: 10px; }
+    .card-title i { color: var(--primary); }
+
+    /* Form */
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .form-control { width: 100%; background: #0f172a; border: 1px solid var(--border); color: #fff; padding: 10px 14px; border-radius: 8px; font-size: 0.95rem; }
+    .form-control:focus { outline: none; border-color: var(--primary); }
+
+    /* Camera Box */
+    .camera-wrapper { position: relative; width: 100%; height: 280px; background: #000; border-radius: 10px; overflow: hidden; border: 1px solid var(--border); margin-bottom: 14px; display: flex; align-items: center; justify-content: center; }
+    .camera-wrapper video { width: 100%; height: 100%; object-fit: cover; }
+    .face-target { position: absolute; width: 140px; height: 180px; border: 2px dashed rgba(59, 130, 246, 0.7); border-radius: 50%; pointer-events: none; }
+
+    /* Thumbnails */
+    .thumbs-container { display: flex; gap: 8px; margin-bottom: 16px; overflow-x: auto; padding-bottom: 4px; }
+    .thumb-slot { width: 60px; height: 60px; border-radius: 8px; border: 1px solid var(--border); background: #0f172a; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; color: var(--text-muted); overflow: hidden; flex-shrink: 0; }
+    .thumb-slot img { width: 100%; height: 100%; object-fit: cover; }
+
+    /* Buttons */
+    .btn { padding: 10px 18px; border-radius: 8px; font-size: 0.9rem; font-weight: 600; cursor: pointer; border: none; transition: all 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-secondary { background: #334155; color: #fff; }
+    .btn-secondary:hover { background: #475569; }
+    .btn-success { background: var(--success); color: #fff; }
+    .btn-danger { background: rgba(239, 68, 68, 0.15); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.3); }
+    .btn-danger:hover { background: var(--danger); color: #fff; }
+    .btn-sm { padding: 5px 10px; font-size: 0.8rem; }
+
+    /* Table */
+    .table-container { overflow-x: auto; max-height: 460px; }
+    table { width: 100%; border-collapse: collapse; text-align: left; }
+    th { background: #0f172a; color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; padding: 12px 14px; border-bottom: 1px solid var(--border); }
+    td { padding: 12px 14px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); font-size: 0.88rem; }
+    tr:hover { background: rgba(255, 255, 255, 0.02); }
+
+    .toast-msg { padding: 12px 16px; border-radius: 8px; margin-top: 14px; font-size: 0.88rem; display: none; }
+    .toast-success { background: rgba(16, 185, 129, 0.15); border: 1px solid var(--success); color: #34d399; }
+    .toast-error { background: rgba(239, 68, 68, 0.15); border: 1px solid var(--danger); color: #f87171; }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="navbar">
+    <a href="/dashboard" class="brand">
+      <i class="fa-solid fa-camera-viewfinder"></i>
+      <span>SmartAttend AI</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="/dashboard"><i class="fa-solid fa-chart-pie"></i> Dashboard</a></li>
+      <li><a href="/attendance"><i class="fa-solid fa-user-check"></i> Live Monitor</a></li>
+      <li><a href="/camera"><i class="fa-solid fa-video"></i> CCTV Settings</a></li>
+      <li><a href="/register" class="active"><i class="fa-solid fa-user-plus"></i> Students</a></li>
+      <li><a href="/train"><i class="fa-solid fa-brain"></i> Model Training</a></li>
+      <li><a href="/reports"><i class="fa-solid fa-file-lines"></i> Reports</a></li>
+    </ul>
+      <a href="/logout" style="text-decoration:none;color:#94a3b8;padding:8px 14px;border-radius:8px;font-size:0.9rem;font-weight:500;transition:all 0.2s;display:flex;align-items:center;gap:8px;margin-left:8px;border:1px solid #334155;" onmouseover="this.style.color='#ef4444';this.style.borderColor='#ef4444';this.style.background='rgba(239,68,68,0.1)'" onmouseout="this.style.color='#94a3b8';this.style.borderColor='#334155';this.style.background='none'"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+  </nav>
+
+  <div class="container">
+    <div class="header-section">
+      <h1>Student Directory & Enrollment</h1>
+      <p>Register new student profiles and train their facial recognition vectors.</p>
+    </div>
+
+    <div class="grid-layout">
+      <!-- Enrollment Card -->
+      <div class="card">
+        <div class="card-title">
+          <i class="fa-solid fa-id-card"></i> Enroll New Student
+        </div>
+
+        <div class="form-group">
+          <label for="usn">University Seat Number (USN)</label>
+          <input type="text" id="usn" class="form-control" placeholder="e.g. 4KV23EC011" />
+        </div>
+
+        <div class="form-group">
+          <label for="name">Full Name</label>
+          <input type="text" id="name" class="form-control" placeholder="e.g. DARSHAN K N" />
+        </div>
+
+        <div class="form-group">
+          <label>Live Face Capture (5 Samples Required)</label>
+          <div class="camera-wrapper">
+            <video id="video" autoplay playsinline></video>
+            <div class="face-target"></div>
+          </div>
+        </div>
+
+        <!-- Thumbnails of captured shots -->
+        <div class="thumbs-container" id="thumbsRow">
+          <div class="thumb-slot" id="slot0">Shot 1</div>
+          <div class="thumb-slot" id="slot1">Shot 2</div>
+          <div class="thumb-slot" id="slot2">Shot 3</div>
+          <div class="thumb-slot" id="slot3">Shot 4</div>
+          <div class="thumb-slot" id="slot4">Shot 5</div>
+        </div>
+
+        <div style="display:flex; gap:10px; margin-bottom:14px;">
+          <button type="button" class="btn btn-secondary" id="captureSingleBtn" style="flex:1;">
+            <i class="fa-solid fa-camera"></i> Capture Frame
+          </button>
+          <button type="button" class="btn btn-primary" id="burstCaptureBtn" style="flex:1;">
+            <i class="fa-solid fa-camera-rotate"></i> Auto 5-Burst
+          </button>
+          <button type="button" class="btn btn-secondary" id="clearThumbsBtn">
+            <i class="fa-solid fa-trash"></i>
+          </button>
+        </div>
+
+        <button type="button" class="btn btn-success" id="enrollSubmitBtn" style="width:100%; padding:12px;">
+          <i class="fa-solid fa-circle-check"></i> Complete Enrollment & Train
+        </button>
+
+        <div id="enrollToast" class="toast-msg"></div>
+      </div>
+
+      <!-- Student Directory Card -->
+      <div class="card">
+        <div class="card-title">
+          <i class="fa-solid fa-users"></i> Registered Students (<span id="studentCount">0</span>)
+        </div>
+
+        <input type="text" id="searchStudentInput" class="form-control" style="margin-bottom:14px;" placeholder="Search registered students..." />
+
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>USN</th>
+                <th>Name</th>
+                <th style="text-align:right;">Action</th>
+              </tr>
+            </thead>
+            <tbody id="studentTableBody">
+              <tr><td colspan="3" style="text-align:center; color:var(--text-muted); padding:24px;">Loading students...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const video = document.getElementById('video');
+    const usnInput = document.getElementById('usn');
+    const nameInput = document.getElementById('name');
+    const captureSingleBtn = document.getElementById('captureSingleBtn');
+    const burstCaptureBtn = document.getElementById('burstCaptureBtn');
+    const clearThumbsBtn = document.getElementById('clearThumbsBtn');
+    const enrollSubmitBtn = document.getElementById('enrollSubmitBtn');
+    const enrollToast = document.getElementById('enrollToast');
+    const studentTableBody = document.getElementById('studentTableBody');
+    const studentCount = document.getElementById('studentCount');
+    const searchStudentInput = document.getElementById('searchStudentInput');
+
+    let capturedImages = [];
+    let localStream = null;
+
+    // Start Webcam
+    async function startCamera() {
+      try {
+        localStream = await navigator.mediaDevices.getUserMedia({
+          video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: "user" }
+        });
+        video.srcObject = localStream;
+      } catch (err) {
+        console.warn('Webcam access error:', err);
+      }
+    }
+
+    function grabFrame() {
+      if (!video.videoWidth) return null;
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      return canvas.toDataURL('image/jpeg', 0.85);
+    }
+
+    function updateThumbnails() {
+      for (let i = 0; i < 5; i++) {
+        const slot = document.getElementById(`slot${i}`);
+        if (capturedImages[i]) {
+          slot.innerHTML = `<img src="${capturedImages[i]}" />`;
+          slot.style.border = '1px solid var(--success)';
+        } else {
+          slot.innerHTML = `Shot ${i + 1}`;
+          slot.style.border = '1px solid var(--border)';
+        }
+      }
+    }
+
+    captureSingleBtn.addEventListener('click', () => {
+      const frame = grabFrame();
+      if (!frame) return;
+      if (capturedImages.length < 5) {
+        capturedImages.push(frame);
+        updateThumbnails();
+      }
+    });
+
+    burstCaptureBtn.addEventListener('click', async () => {
+      capturedImages = [];
+      updateThumbnails();
+      burstCaptureBtn.disabled = true;
+      burstCaptureBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Capturing...`;
+
+      for (let i = 0; i < 5; i++) {
+        const frame = grabFrame();
+        if (frame) {
+          capturedImages.push(frame);
+          updateThumbnails();
+        }
+        await new Promise(r => setTimeout(r, 350));
+      }
+
+      burstCaptureBtn.disabled = false;
+      burstCaptureBtn.innerHTML = `<i class="fa-solid fa-camera-rotate"></i> Auto 5-Burst`;
+    });
+
+    clearThumbsBtn.addEventListener('click', () => {
+      capturedImages = [];
+      updateThumbnails();
+    });
+
+    function showToast(msg, type) {
+      enrollToast.style.display = 'block';
+      enrollToast.className = `toast-msg toast-${type}`;
+      enrollToast.innerHTML = `<i class="fa-solid fa-${type === 'success' ? 'circle-check' : 'circle-exclamation'}"></i> ${msg}`;
+    }
+
+    // Submit Enrollment
+    enrollSubmitBtn.addEventListener('click', async () => {
+      const usn = usnInput.value.trim().toUpperCase();
+      const name = nameInput.value.trim().toUpperCase();
+
+      if (!usn || !name) {
+        showToast("Please enter both USN and Full Name.", "error");
+        return;
+      }
+
+      if (capturedImages.length < 3) {
+        showToast("Please capture at least 3 face samples before enrolling.", "error");
+        return;
+      }
+
+      enrollSubmitBtn.disabled = true;
+      enrollSubmitBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Enrolling & Training...`;
+
+      try {
+        const res = await fetch('/api/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            usn: usn,
+            name: name,
+            images: capturedImages
+          })
+        });
+        const result = await res.json();
+        if (res.ok) {
+          showToast(`Success: ${result.name} enrolled with ${result.images_saved} photos! Model retrained.`, "success");
+          usnInput.value = '';
+          nameInput.value = '';
+          capturedImages = [];
+          updateThumbnails();
+          loadStudents();
+        } else {
+          showToast(result.message || "Enrollment failed", "error");
+        }
+      } catch (err) {
+        showToast(`Enrollment Error: ${err.message}`, "error");
+      } finally {
+        enrollSubmitBtn.disabled = false;
+        enrollSubmitBtn.innerHTML = `<i class="fa-solid fa-circle-check"></i> Complete Enrollment & Train`;
+      }
+    });
+
+    // Load Students Roster
+    let studentsList = [];
+    async function loadStudents() {
+      try {
+        const res = await fetch('/api/students');
+        studentsList = await res.json();
+        renderStudents(studentsList);
+        studentCount.textContent = studentsList.length;
+      } catch (err) {
+        console.error('Error loading students:', err);
+      }
+    }
+
+    function renderStudents(students) {
+      const filter = searchStudentInput.value.toLowerCase().trim();
+      const filtered = students.filter(s => 
+        s.name.toLowerCase().includes(filter) || s.usn.toLowerCase().includes(filter)
+      );
+
+      if (filtered.length === 0) {
+        studentTableBody.innerHTML = `<tr><td colspan="3" style="text-align:center; color:var(--text-muted); padding:24px;">No students registered.</td></tr>`;
+        return;
+      }
+
+      studentTableBody.innerHTML = filtered.map(s => `
+        <tr>
+          <td><strong>${s.usn}</strong></td>
+          <td>${s.name}</td>
+          <td style="text-align:right;">
+            <button class="btn btn-danger btn-sm" onclick="removeStudent('${s.usn}', '${s.name}')">
+              <i class="fa-solid fa-trash-can"></i> Remove
+            </button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    searchStudentInput.addEventListener('input', () => renderStudents(studentsList));
+
+    window.removeStudent = async function(usn, name) {
+      if (!confirm(`Are you sure you want to delete student ${name} (${usn})? This removes their dataset and encodings.`)) return;
+
+      try {
+        const res = await fetch(`/students/${encodeURIComponent(usn)}`, { method: 'DELETE' });
+        if (res.ok) {
+          loadStudents();
+          // Trigger retrain in background to purge encodings
+          fetch('/api/train', { method: 'POST' });
+        } else {
+          const err = await res.json();
+          alert('Delete failed: ' + err.message);
+        }
+      } catch (e) {
+        alert('Delete error: ' + e.message);
+      }
+    };
+
+    startCamera();
+    loadStudents();
+  </script>
+</body>
+</html>

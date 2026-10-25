@@ -1,0 +1,227 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Attendance Reports & Archives | Smart Attendance</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --border: #334155;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --radius: 12px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; }
+    body { background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
+
+    /* Navbar */
+    .navbar { background: rgba(30, 41, 59, 0.95); backdrop-filter: blur(10px); border-bottom: 1px solid var(--border); padding: 14px 28px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    .brand { display: flex; align-items: center; gap: 12px; font-weight: 700; font-size: 1.15rem; color: #fff; text-decoration: none; }
+    .brand i { color: var(--primary); font-size: 1.4rem; }
+    .nav-links { display: flex; gap: 8px; list-style: none; }
+    .nav-links a { text-decoration: none; color: var(--text-muted); padding: 8px 16px; border-radius: 8px; font-size: 0.9rem; font-weight: 500; transition: all 0.2s; display: flex; align-items: center; gap: 8px; }
+    .nav-links a:hover, .nav-links a.active { color: #fff; background: rgba(59, 130, 246, 0.15); }
+    .nav-links a.active { color: var(--primary); font-weight: 600; }
+
+    /* Layout */
+    .container { max-width: 1240px; width: 100%; margin: 24px auto; padding: 0 20px; flex: 1; display: flex; flex-direction: column; gap: 24px; }
+    .header-bar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
+    .header-bar h1 { font-size: 1.7rem; font-weight: 700; }
+    .header-bar p { color: var(--text-muted); font-size: 0.95rem; margin-top: 4px; }
+
+    /* Filter Card */
+    .filter-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
+    .filter-controls { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .form-control { background: #0f172a; border: 1px solid var(--border); color: #fff; padding: 9px 14px; border-radius: 8px; font-size: 0.9rem; }
+    .form-control:focus { outline: none; border-color: var(--primary); }
+
+    /* Summary Metrics */
+    .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+    .summary-box { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; text-align: center; }
+    .summary-box .val { font-size: 1.8rem; font-weight: 800; margin-top: 6px; }
+    .summary-box .lbl { font-size: 0.78rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600; }
+
+    /* Table */
+    .table-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px; }
+    .table-container { overflow-x: auto; margin-top: 14px; max-height: 520px; }
+    table { width: 100%; border-collapse: collapse; text-align: left; }
+    th { background: #0f172a; color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+    td { padding: 12px 16px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); font-size: 0.9rem; }
+    tr:hover { background: rgba(255, 255, 255, 0.02); }
+
+    .btn { padding: 9px 16px; border-radius: 8px; font-size: 0.88rem; font-weight: 600; cursor: pointer; border: none; transition: all 0.2s; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-secondary { background: #334155; color: #fff; }
+    .btn-secondary:hover { background: #475569; }
+
+    @media print {
+      .navbar, .filter-card, .btn { display: none !important; }
+      body { background: #fff; color: #000; }
+      .table-card, .summary-box { border: 1px solid #ccc; box-shadow: none; background: #fff; }
+      th { background: #eee; color: #000; }
+      td { color: #000; border-bottom: 1px solid #eee; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="navbar">
+    <a href="/dashboard" class="brand">
+      <i class="fa-solid fa-camera-viewfinder"></i>
+      <span>SmartAttend AI</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="/dashboard"><i class="fa-solid fa-chart-pie"></i> Dashboard</a></li>
+      <li><a href="/attendance"><i class="fa-solid fa-user-check"></i> Live Monitor</a></li>
+      <li><a href="/camera"><i class="fa-solid fa-video"></i> CCTV Settings</a></li>
+      <li><a href="/register"><i class="fa-solid fa-user-plus"></i> Students</a></li>
+      <li><a href="/train"><i class="fa-solid fa-brain"></i> Model Training</a></li>
+      <li><a href="/reports" class="active"><i class="fa-solid fa-file-lines"></i> Reports</a></li>
+    </ul>
+      <a href="/logout" style="text-decoration:none;color:#94a3b8;padding:8px 14px;border-radius:8px;font-size:0.9rem;font-weight:500;transition:all 0.2s;display:flex;align-items:center;gap:8px;margin-left:8px;border:1px solid #334155;" onmouseover="this.style.color='#ef4444';this.style.borderColor='#ef4444';this.style.background='rgba(239,68,68,0.1)'" onmouseout="this.style.color='#94a3b8';this.style.borderColor='#334155';this.style.background='none'"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+  </nav>
+
+  <div class="container">
+    <div class="header-bar">
+      <div>
+        <h1>Attendance Reports & Historical Archives</h1>
+        <p>Review daily classroom attendance logs, filter by date, and export official CSV reports.</p>
+      </div>
+      <div>
+        <button class="btn btn-secondary" onclick="window.print()"><i class="fa-solid fa-print"></i> Print Sheet</button>
+      </div>
+    </div>
+
+    <!-- Filter Card -->
+    <div class="filter-card">
+      <div class="filter-controls">
+        <label style="font-size:0.85rem; font-weight:600; color:var(--text-muted); text-transform:uppercase;">Select Date:</label>
+        <input type="date" id="datePicker" class="form-control" />
+        <input type="text" id="searchFilter" class="form-control" style="width:240px;" placeholder="Search by name or USN..." />
+      </div>
+      <div>
+        <a id="downloadCsvBtn" class="btn btn-primary" href="/api/export/csv">
+          <i class="fa-solid fa-file-arrow-down"></i> Export Date to CSV
+        </a>
+      </div>
+    </div>
+
+    <!-- Summary Metrics -->
+    <div class="summary-grid">
+      <div class="summary-box">
+        <div class="lbl">Total Enrolled</div>
+        <div class="val" id="sumTotal" style="color:#fff;">0</div>
+      </div>
+      <div class="summary-box">
+        <div class="lbl">Present on Date</div>
+        <div class="val" id="sumPresent" style="color:var(--success);">0</div>
+      </div>
+      <div class="summary-box">
+        <div class="lbl">Absent on Date</div>
+        <div class="val" id="sumAbsent" style="color:var(--warning);">0</div>
+      </div>
+      <div class="summary-box">
+        <div class="lbl">Attendance Rate</div>
+        <div class="val" id="sumRate" style="color:var(--primary);">0%</div>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="table-card">
+      <h3 style="font-size:1.1rem; font-weight:700; margin-bottom:12px;">Detailed Attendance Log (<span id="selectedDateLabel"></span>)</h3>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>USN</th>
+              <th>Student Name</th>
+              <th>Time</th>
+              <th>Capture Method</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="reportsTbody">
+            <tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding:24px;">Loading records...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const datePicker = document.getElementById('datePicker');
+    const searchFilter = document.getElementById('searchFilter');
+    const reportsTbody = document.getElementById('reportsTbody');
+    const selectedDateLabel = document.getElementById('selectedDateLabel');
+    const downloadCsvBtn = document.getElementById('downloadCsvBtn');
+
+    let currentRecords = [];
+
+    // Set today as default
+    const today = new Date().toISOString().split('T')[0];
+    datePicker.value = today;
+
+    async function fetchDateData(dateStr) {
+      selectedDateLabel.textContent = dateStr;
+      downloadCsvBtn.href = `/api/export/csv?date=${dateStr}`;
+
+      try {
+        const [statsRes, recsRes] = await Promise.all([
+          fetch(`/api/stats?date=${dateStr}`),
+          fetch(`/api/attendance_records?date=${dateStr}`)
+        ]);
+
+        const stats = await statsRes.json();
+        currentRecords = await recsRes.json();
+
+        document.getElementById('sumTotal').textContent = stats.total_students || 0;
+        document.getElementById('sumPresent').textContent = stats.present_count || 0;
+        document.getElementById('sumAbsent').textContent = stats.absent_count || 0;
+        document.getElementById('sumRate').textContent = `${stats.attendance_rate || 0}%`;
+
+        renderTable(currentRecords);
+      } catch (err) {
+        console.error('Report fetch error:', err);
+      }
+    }
+
+    function renderTable(records) {
+      const q = searchFilter.value.toLowerCase().trim();
+      const filtered = records.filter(r => 
+        (r.name && r.name.toLowerCase().includes(q)) || 
+        (r.usn && r.usn.toLowerCase().includes(q))
+      );
+
+      if (filtered.length === 0) {
+        reportsTbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding:30px;">No attendance records found for this date.</td></tr>`;
+        return;
+      }
+
+      reportsTbody.innerHTML = filtered.map(r => `
+        <tr>
+          <td><strong>${r.usn}</strong></td>
+          <td>${r.name}</td>
+          <td><span style="color:var(--text-muted);">${r.time}</span></td>
+          <td><span style="background:rgba(59,130,246,0.15); color:var(--primary); padding:3px 8px; border-radius:6px; font-size:0.75rem; font-weight:600;">${r.method || 'CCTV'}</span></td>
+          <td><span style="color:var(--success); font-weight:600;"><i class="fa-solid fa-circle-check"></i> Present</span></td>
+        </tr>
+      `).join('');
+    }
+
+    datePicker.addEventListener('change', () => fetchDateData(datePicker.value));
+    searchFilter.addEventListener('input', () => renderTable(currentRecords));
+
+    fetchDateData(today);
+  </script>
+</body>
+</html>
+

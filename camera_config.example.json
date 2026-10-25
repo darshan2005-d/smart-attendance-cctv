@@ -1,0 +1,17 @@
+{
+    "source_type": "cctv",
+    "cctv_ip": "192.168.1.64",
+    "cctv_port": 554,
+    "cctv_username": "admin",
+    "cctv_password": "YOUR_CAMERA_PASSWORD",
+    "cctv_channel": "101",
+    "cctv_preset": "hikvision",
+    "custom_rtsp_url": "",
+    "webcam_index": 0,
+    "scan_mode": "manual",
+    "auto_mark_enabled": true,
+    "recognition_tolerance": 0.50,
+    "cooldown_seconds": 60,
+    "process_every_n_frames": 8,
+    "play_sound": true
+}

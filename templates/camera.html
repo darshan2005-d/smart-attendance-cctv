@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CCTV & Camera Settings | Smart Attendance</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --border: #334155;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --radius: 12px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; }
+    body { background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
+
+    /* Navbar */
+    .navbar { background: rgba(30, 41, 59, 0.95); backdrop-filter: blur(10px); border-bottom: 1px solid var(--border); padding: 14px 28px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    .brand { display: flex; align-items: center; gap: 12px; font-weight: 700; font-size: 1.15rem; color: #fff; text-decoration: none; }
+    .brand i { color: var(--primary); font-size: 1.4rem; }
+    .nav-links { display: flex; gap: 8px; list-style: none; }
+    .nav-links a { text-decoration: none; color: var(--text-muted); padding: 8px 16px; border-radius: 8px; font-size: 0.9rem; font-weight: 500; transition: all 0.2s; display: flex; align-items: center; gap: 8px; }
+    .nav-links a:hover, .nav-links a.active { color: #fff; background: rgba(59, 130, 246, 0.15); }
+    .nav-links a.active { color: var(--primary); font-weight: 600; }
+
+    /* Layout */
+    .container { max-width: 1200px; width: 100%; margin: 24px auto; padding: 0 20px; flex: 1; }
+    .header-section { margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+    .header-section h1 { font-size: 1.7rem; font-weight: 700; }
+    .header-section p { color: var(--text-muted); font-size: 0.95rem; margin-top: 4px; }
+
+    .grid-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    @media (max-width: 900px) { .grid-layout { grid-template-columns: 1fr; } }
+
+    .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.25); }
+    .card-title { font-size: 1.15rem; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; color: #fff; }
+    .card-title i { color: var(--primary); }
+
+    /* Discovered device pill */
+    .discovery-box { background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 10px; padding: 16px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+    .discovery-info { display: flex; align-items: center; gap: 12px; }
+    .discovery-icon { width: 42px; height: 42px; border-radius: 10px; background: rgba(16, 185, 129, 0.2); display: flex; align-items: center; justify-content: center; color: var(--success); font-size: 1.2rem; }
+    .discovery-text h4 { font-size: 0.95rem; color: #fff; }
+    .discovery-text p { font-size: 0.82rem; color: var(--text-muted); }
+
+    /* Form Styles */
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .form-control { width: 100%; background: #0f172a; border: 1px solid var(--border); color: #fff; padding: 10px 14px; border-radius: 8px; font-size: 0.95rem; transition: border-color 0.2s; }
+    .form-control:focus { outline: none; border-color: var(--primary); }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+    .switch-container { display: flex; align-items: center; justify-content: space-between; background: #0f172a; padding: 12px 16px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 16px; }
+    .switch-label { font-size: 0.9rem; font-weight: 500; }
+
+    /* Buttons */
+    .btn { padding: 11px 20px; border-radius: 8px; font-size: 0.92rem; font-weight: 600; cursor: pointer; border: none; transition: all 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-hover); transform: translateY(-1px); }
+    .btn-success { background: var(--success); color: #fff; }
+    .btn-success:hover { background: #059669; }
+    .btn-secondary { background: #334155; color: #fff; }
+    .btn-secondary:hover { background: #475569; }
+    .btn-block { width: 100%; }
+
+    /* Diagnostic Box */
+    .diagnostic-panel { margin-top: 20px; padding: 14px; border-radius: 8px; font-size: 0.88rem; display: none; line-height: 1.5; }
+    .diagnostic-success { background: rgba(16, 185, 129, 0.15); border: 1px solid var(--success); color: #34d399; }
+    .diagnostic-error { background: rgba(239, 68, 68, 0.15); border: 1px solid var(--danger); color: #f87171; }
+
+    /* Video Preview Card */
+    .preview-box { position: relative; width: 100%; height: 320px; background: #000; border-radius: 10px; overflow: hidden; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border); }
+    .preview-box img { width: 100%; height: 100%; object-fit: contain; }
+    .live-badge { position: absolute; top: 12px; left: 12px; background: rgba(239, 68, 68, 0.85); color: #fff; font-size: 0.75rem; font-weight: 700; padding: 4px 10px; border-radius: 20px; display: flex; align-items: center; gap: 6px; }
+    .pulse-dot { width: 8px; height: 8px; background: #fff; border-radius: 50%; animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="navbar">
+    <a href="/dashboard" class="brand">
+      <i class="fa-solid fa-camera-viewfinder"></i>
+      <span>SmartAttend AI</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="/dashboard"><i class="fa-solid fa-chart-pie"></i> Dashboard</a></li>
+      <li><a href="/attendance"><i class="fa-solid fa-user-check"></i> Live Monitor</a></li>
+      <li><a href="/camera" class="active"><i class="fa-solid fa-video"></i> CCTV Settings</a></li>
+      <li><a href="/register"><i class="fa-solid fa-user-plus"></i> Students</a></li>
+      <li><a href="/train"><i class="fa-solid fa-brain"></i> Model Training</a></li>
+      <li><a href="/reports"><i class="fa-solid fa-file-lines"></i> Reports</a></li>
+    </ul>
+      <a href="/logout" style="text-decoration:none;color:#94a3b8;padding:8px 14px;border-radius:8px;font-size:0.9rem;font-weight:500;transition:all 0.2s;display:flex;align-items:center;gap:8px;margin-left:8px;border:1px solid #334155;" onmouseover="this.style.color='#ef4444';this.style.borderColor='#ef4444';this.style.background='rgba(239,68,68,0.1)'" onmouseout="this.style.color='#94a3b8';this.style.borderColor='#334155';this.style.background='none'"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+  </nav>
+
+  <div class="container">
+    <div class="header-section">
+      <div>
+        <h1>CCTV & Camera Setup</h1>
+        <p>Configure and verify your Hikvision/IP CCTV camera stream and local camera sources.</p>
+      </div>
+      <div>
+        <button class="btn btn-secondary" id="rescanBtn"><i class="fa-solid fa-rotate"></i> Scan Network</button>
+      </div>
+    </div>
+
+    <!-- Auto-Discovered Device Banner -->
+    <div id="discoveryBanner" class="discovery-box" style="display:none;">
+      <div class="discovery-info">
+        <div class="discovery-icon"><i class="fa-solid fa-network-wired"></i></div>
+        <div class="discovery-text">
+          <h4 id="discTitle">Detected CCTV IP Camera</h4>
+          <p id="discSubtitle">Active RTSP port 554 discovered on Ethernet</p>
+        </div>
+      </div>
+      <button class="btn btn-success" id="autoApplyBtn"><i class="fa-solid fa-bolt"></i> Use This Camera</button>
+    </div>
+
+    <div class="grid-layout">
+      <!-- Camera Configuration Card -->
+      <div class="card">
+        <div class="card-title">
+          <i class="fa-solid fa-sliders"></i> Stream Configuration
+        </div>
+
+        <form id="cameraForm">
+          <div class="form-group">
+            <label for="sourceType">Camera Source Type</label>
+            <select id="sourceType" class="form-control">
+              <option value="cctv">Ethernet CCTV (Hikvision / IP RTSP)</option>
+              <option value="webcam">Built-in / USB Webcam</option>
+            </select>
+          </div>
+
+          <!-- CCTV Specific Inputs -->
+          <div id="cctvFields">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="cctvIp">CCTV IP Address</label>
+                <input type="text" id="cctvIp" class="form-control" value="192.168.1.64" placeholder="192.168.1.64" />
+              </div>
+              <div class="form-group">
+                <label for="cctvPort">RTSP Port</label>
+                <input type="number" id="cctvPort" class="form-control" value="554" />
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="cctvUsername">Username</label>
+                <input type="text" id="cctvUsername" class="form-control" value="admin" placeholder="admin" />
+              </div>
+              <div class="form-group">
+                <label for="cctvPassword">Password</label>
+                <input type="password" id="cctvPassword" class="form-control" placeholder="Enter CCTV Password" />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="cctvChannel">Stream Channel Preset</label>
+              <select id="cctvChannel" class="form-control">
+                <option value="102">Hikvision Sub-Stream (/Streaming/Channels/102) [Recommended for Fast AI]</option>
+                <option value="101">Hikvision Main HD (/Streaming/Channels/101) [High Resolution]</option>
+                <option value="custom">Custom RTSP URL</option>
+              </select>
+            </div>
+
+            <div class="form-group" id="customUrlGroup" style="display:none;">
+              <label for="customRtspUrl">Custom RTSP URL</label>
+              <input type="text" id="customRtspUrl" class="form-control" placeholder="rtsp://admin:pass@192.168.1.64:554/..." />
+            </div>
+          </div>
+
+          <!-- Webcam Fields -->
+          <div id="webcamFields" style="display:none;">
+            <div class="form-group">
+              <label for="webcamIndex">Webcam Device Index</label>
+              <select id="webcamIndex" class="form-control">
+                <option value="0">Camera 0 (Default Integrated / USB)</option>
+                <option value="1">Camera 1 (Secondary)</option>
+                <option value="2">Camera 2</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="scanMode">Face Recognition Scanning Mode</label>
+            <select id="scanMode" class="form-control">
+              <option value="manual">Manual On-Demand (Scan on Button Click - Silky Smooth 30FPS, No Lag) [Recommended]</option>
+              <option value="continuous">Continuous Auto-Scan (Repeatedly analyzes every frame in background)</option>
+            </select>
+          </div>
+
+          <div class="switch-container">
+            <div>
+              <div class="switch-label">Automated Attendance Marking</div>
+              <p style="font-size:0.75rem; color:var(--text-muted);">Automatically save record to database when student face is recognized</p>
+            </div>
+            <input type="checkbox" id="autoMark" checked style="transform: scale(1.3); cursor: pointer;" />
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="cooldown">Cooldown (Seconds)</label>
+              <input type="number" id="cooldown" class="form-control" value="60" min="10" max="3600" />
+            </div>
+            <div class="form-group">
+              <label for="tolerance">Match Tolerance (0.4 - 0.6)</label>
+              <input type="number" id="tolerance" class="form-control" value="0.48" step="0.02" min="0.3" max="0.7" />
+            </div>
+          </div>
+
+          <div style="display:flex; gap:12px; margin-top: 12px;">
+            <button type="button" class="btn btn-secondary" id="testBtn" style="flex:1;">
+              <i class="fa-solid fa-plug"></i> Test Connection
+            </button>
+            <button type="submit" class="btn btn-primary" id="saveBtn" style="flex:1;">
+              <i class="fa-solid fa-floppy-disk"></i> Save & Apply
+            </button>
+          </div>
+
+          <div id="diagBox" class="diagnostic-panel"></div>
+        </form>
+      </div>
+
+      <!-- Live Stream Preview Card -->
+      <div class="card">
+        <div class="card-title">
+          <i class="fa-solid fa-tv"></i> Active Video Stream
+        </div>
+
+        <div class="preview-box">
+          <span class="live-badge"><span class="pulse-dot"></span> LIVE</span>
+          <img id="liveStream" src="/video_feed" alt="Camera Feed" />
+        </div>
+
+        <div style="margin-top: 20px; background: #0f172a; padding: 16px; border-radius: 8px; border: 1px solid var(--border);">
+          <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+            <span style="color:var(--text-muted); font-size:0.85rem;">Status:</span>
+            <span id="camStatus" style="font-weight:600; color:var(--success);">Connecting...</span>
+          </div>
+          <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+            <span style="color:var(--text-muted); font-size:0.85rem;">Active Source:</span>
+            <span id="camSource" style="font-size:0.85rem;">Hikvision CCTV</span>
+          </div>
+          <div style="display:flex; justify-content:space-between;">
+            <span style="color:var(--text-muted); font-size:0.85rem;">Faces in View:</span>
+            <span id="camFaces" style="font-weight:600; color:var(--primary);">0</span>
+          </div>
+        </div>
+
+        <div style="margin-top:16px;">
+          <a href="/attendance" class="btn btn-success btn-block">
+            <i class="fa-solid fa-expand"></i> Open Fullscreen Live Monitor
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const sourceType = document.getElementById('sourceType');
+    const cctvFields = document.getElementById('cctvFields');
+    const webcamFields = document.getElementById('webcamFields');
+    const cctvIp = document.getElementById('cctvIp');
+    const cctvPort = document.getElementById('cctvPort');
+    const cctvUsername = document.getElementById('cctvUsername');
+    const cctvPassword = document.getElementById('cctvPassword');
+    const cctvChannel = document.getElementById('cctvChannel');
+    const customUrlGroup = document.getElementById('customUrlGroup');
+    const customRtspUrl = document.getElementById('customRtspUrl');
+    const webcamIndex = document.getElementById('webcamIndex');
+    const scanMode = document.getElementById('scanMode');
+    const autoMark = document.getElementById('autoMark');
+    const cooldown = document.getElementById('cooldown');
+    const tolerance = document.getElementById('tolerance');
+    const testBtn = document.getElementById('testBtn');
+    const saveBtn = document.getElementById('saveBtn');
+    const diagBox = document.getElementById('diagBox');
+    const discoveryBanner = document.getElementById('discoveryBanner');
+    const autoApplyBtn = document.getElementById('autoApplyBtn');
+    const rescanBtn = document.getElementById('rescanBtn');
+
+    sourceType.addEventListener('change', () => {
+      const isCctv = sourceType.value === 'cctv';
+      cctvFields.style.display = isCctv ? 'block' : 'none';
+      webcamFields.style.display = isCctv ? 'none' : 'block';
+    });
+
+    cctvChannel.addEventListener('change', () => {
+      customUrlGroup.style.display = cctvChannel.value === 'custom' ? 'block' : 'none';
+    });
+
+    async function loadConfig() {
+      try {
+        const res = await fetch('/api/camera/config');
+        const cfg = await res.json();
+        sourceType.value = cfg.source_type || 'cctv';
+        sourceType.dispatchEvent(new Event('change'));
+        cctvIp.value = cfg.cctv_ip || '192.168.1.64';
+        cctvPort.value = cfg.cctv_port || 554;
+        cctvUsername.value = cfg.cctv_username || 'admin';
+        cctvPassword.value = cfg.cctv_password || '';
+        cctvChannel.value = cfg.cctv_channel || '102';
+        customRtspUrl.value = cfg.custom_rtsp_url || '';
+        cctvChannel.dispatchEvent(new Event('change'));
+        webcamIndex.value = cfg.webcam_index !== undefined ? cfg.webcam_index : 0;
+        scanMode.value = cfg.scan_mode || 'manual';
+        autoMark.checked = cfg.auto_mark_enabled !== false;
+        cooldown.value = cfg.cooldown_seconds || 60;
+        tolerance.value = cfg.recognition_tolerance || 0.48;
+      } catch (err) {
+        console.error('Config load error:', err);
+      }
+    }
+
+    async function scanDevices() {
+      try {
+        const res = await fetch('/api/camera/discover');
+        const data = await res.json();
+        if (data.network_cameras && data.network_cameras.length > 0) {
+          const cam = data.network_cameras[0];
+          document.getElementById('discTitle').textContent = `${cam.brand} Camera Discovered (${cam.ip}:${cam.port})`;
+          document.getElementById('discSubtitle').textContent = `RTSP streaming port is open and listening. Click below to prefill.`;
+          discoveryBanner.style.display = 'flex';
+          autoApplyBtn.onclick = () => {
+            sourceType.value = 'cctv';
+            sourceType.dispatchEvent(new Event('change'));
+            cctvIp.value = cam.ip;
+            cctvPort.value = cam.port;
+            cctvChannel.value = '102';
+            cctvPassword.focus();
+            showDiag(`Loaded ${cam.brand} at ${cam.ip}. Enter camera password and click Test Connection.`, 'success');
+          };
+        }
+      } catch (err) {
+        console.warn('Scan error:', err);
+      }
+    }
+
+    function showDiag(msg, type) {
+      diagBox.style.display = 'block';
+      diagBox.className = `diagnostic-panel diagnostic-${type}`;
+      diagBox.innerHTML = `<i class="fa-solid fa-${type === 'success' ? 'circle-check' : 'circle-exclamation'}"></i> ${msg}`;
+    }
+
+    function getPayload() {
+      return {
+        source_type: sourceType.value,
+        cctv_ip: cctvIp.value.trim(),
+        cctv_port: parseInt(cctvPort.value) || 554,
+        cctv_username: cctvUsername.value.trim(),
+        cctv_password: cctvPassword.value,
+        cctv_channel: cctvChannel.value,
+        custom_rtsp_url: cctvChannel.value === 'custom' ? customRtspUrl.value.trim() : '',
+        webcam_index: parseInt(webcamIndex.value) || 0,
+        scan_mode: scanMode.value,
+        auto_mark_enabled: autoMark.checked,
+        cooldown_seconds: parseInt(cooldown.value) || 60,
+        recognition_tolerance: parseFloat(tolerance.value) || 0.48
+      };
+    }
+
+    testBtn.addEventListener('click', async () => {
+      testBtn.disabled = true;
+      testBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Testing...`;
+      diagBox.style.display = 'none';
+
+      try {
+        const res = await fetch('/api/camera/test', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(getPayload())
+        });
+        const result = await res.json();
+        if (result.success) {
+          showDiag(`Success: ${result.message} (Resolution: ${result.resolution})`, 'success');
+        } else {
+          showDiag(`Connection Failed: ${result.message}`, 'error');
+        }
+      } catch (err) {
+        showDiag(`Test Error: ${err.message}`, 'error');
+      } finally {
+        testBtn.disabled = false;
+        testBtn.innerHTML = `<i class="fa-solid fa-plug"></i> Test Connection`;
+      }
+    });
+
+    document.getElementById('cameraForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      saveBtn.disabled = true;
+      saveBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Saving...`;
+
+      try {
+        const res = await fetch('/api/camera/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(getPayload())
+        });
+        const result = await res.json();
+        showDiag(result.message || 'Configuration saved successfully!', 'success');
+        // Refresh preview feed
+        const img = document.getElementById('liveStream');
+        img.src = '/video_feed?t=' + Date.now();
+      } catch (err) {
+        showDiag(`Save Error: ${err.message}`, 'error');
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = `<i class="fa-solid fa-floppy-disk"></i> Save & Apply`;
+      }
+    });
+
+    rescanBtn.addEventListener('click', async () => {
+      rescanBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Scanning...`;
+      await scanDevices();
+      rescanBtn.innerHTML = `<i class="fa-solid fa-rotate"></i> Scan Network`;
+    });
+
+    // Periodically update camera status
+    async function updateStatus() {
+      try {
+        const res = await fetch('/api/camera/status');
+        const st = await res.json();
+        const camStatus = document.getElementById('camStatus');
+        if (st.is_connected) {
+          camStatus.textContent = 'ONLINE';
+          camStatus.style.color = '#10b981';
+        } else {
+          camStatus.textContent = 'CONNECTING...';
+          camStatus.style.color = '#f59e0b';
+        }
+        document.getElementById('camSource').textContent = st.description || 'CCTV';
+        document.getElementById('camFaces').textContent = st.detected_faces_count || 0;
+      } catch (e) {}
+    }
+
+    loadConfig();
+    scanDevices();
+    setInterval(updateStatus, 2000);
+    updateStatus();
+  </script>
+</body>
+</html>
+

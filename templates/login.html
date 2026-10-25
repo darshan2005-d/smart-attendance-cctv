@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Smart Classroom Attendance - Sign In</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --border: #334155;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --primary-gradient: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+      --primary-gradient-hover: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+      --success: #10b981;
+      --danger: #ef4444;
+      --danger-bg: rgba(239, 68, 68, 0.12);
+      --radius: 14px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    }
+
+    html, body {
+      height: 100%;
+      background-color: var(--bg);
+      color: var(--text);
+      overflow-x: hidden;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      padding: 20px;
+      background: radial-gradient(circle at 15% 15%, rgba(59, 130, 246, 0.12) 0%, transparent 45%),
+                  radial-gradient(circle at 85% 85%, rgba(99, 102, 241, 0.1) 0%, transparent 45%),
+                  var(--bg);
+    }
+
+    /* Animated background gradient orbs */
+    .bg-orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.35;
+      pointer-events: none;
+      z-index: 0;
+      animation: float 14s ease-in-out infinite alternate;
+    }
+    .bg-orb-1 {
+      width: 420px;
+      height: 420px;
+      background: #3b82f6;
+      top: 5%;
+      left: 10%;
+    }
+    .bg-orb-2 {
+      width: 360px;
+      height: 360px;
+      background: #6366f1;
+      bottom: 8%;
+      right: 12%;
+      animation-delay: -7s;
+    }
+
+    @keyframes float {
+      0% {
+        transform: translateY(0px) scale(1);
+      }
+      50% {
+        transform: translateY(-30px) scale(1.05);
+      }
+      100% {
+        transform: translateY(20px) scale(0.95);
+      }
+    }
+
+    /* Ambient Canvas for Connected AI Particles */
+    #particle-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    /* Login Card Wrapper */
+    .login-container {
+      position: relative;
+      z-index: 2;
+      width: 100%;
+      max-width: 440px;
+      animation: fadeInCard 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes fadeInCard {
+      from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.98);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .login-card {
+      background: rgba(30, 41, 59, 0.88);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 40px 34px 34px 34px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.55),
+                  0 0 0 1px rgba(255, 255, 255, 0.05),
+                  0 0 35px rgba(59, 130, 246, 0.12);
+      transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .login-card:hover {
+      border-color: rgba(59, 130, 246, 0.4);
+      box-shadow: 0 25px 55px -10px rgba(0, 0, 0, 0.6),
+                  0 0 0 1px rgba(255, 255, 255, 0.08),
+                  0 0 45px rgba(59, 130, 246, 0.18);
+    }
+
+    /* Header & Icon */
+    .brand-header {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+
+    .icon-badge {
+      position: relative;
+      width: 68px;
+      height: 68px;
+      margin: 0 auto 18px auto;
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.18), rgba(30, 58, 138, 0.3));
+      border: 1px solid rgba(59, 130, 246, 0.4);
+      border-radius: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 24px rgba(59, 130, 246, 0.25);
+      transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .login-card:hover .icon-badge {
+      transform: translateY(-2px) scale(1.04);
+    }
+
+    .icon-badge i.main-icon {
+      font-size: 30px;
+      color: var(--primary);
+      filter: drop-shadow(0 2px 8px rgba(59, 130, 246, 0.5));
+    }
+
+    .icon-badge .shield-dot {
+      position: absolute;
+      bottom: -4px;
+      right: -4px;
+      width: 24px;
+      height: 24px;
+      background: #1e293b;
+      border: 2px solid #0f172a;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--success);
+      font-size: 11px;
+    }
+
+    .brand-title {
+      font-size: 1.55rem;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.4px;
+      margin-bottom: 6px;
+    }
+
+    .brand-subtitle {
+      color: var(--text-muted);
+      font-size: 0.92rem;
+      line-height: 1.4;
+    }
+
+    /* Error Alert */
+    .error-alert {
+      background: var(--danger-bg);
+      border: 1px solid rgba(239, 68, 68, 0.35);
+      color: #fca5a5;
+      padding: 12px 16px;
+      border-radius: 10px;
+      font-size: 0.88rem;
+      margin-bottom: 22px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      animation: shake 0.45s ease-in-out;
+    }
+
+    .error-alert i {
+      font-size: 1.1rem;
+      color: var(--danger);
+      flex-shrink: 0;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-6px); }
+      40%, 80% { transform: translateX(6px); }
+    }
+
+    /* Form Elements */
+    .form-group {
+      margin-bottom: 20px;
+      text-align: left;
+    }
+
+    .form-label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 0.86rem;
+      font-weight: 600;
+      color: #cbd5e1;
+      letter-spacing: 0.3px;
+    }
+
+    .input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .input-icon {
+      position: absolute;
+      left: 15px;
+      color: #64748b;
+      font-size: 1rem;
+      pointer-events: none;
+      transition: color 0.2s ease;
+      z-index: 1;
+    }
+
+    .form-input {
+      width: 100%;
+      background: rgba(15, 23, 42, 0.75);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 13px 44px 13px 44px;
+      color: var(--text);
+      font-size: 0.95rem;
+      outline: none;
+      transition: all 0.25s ease;
+    }
+
+    .form-input::placeholder {
+      color: #64748b;
+      font-size: 0.92rem;
+    }
+
+    .form-input:hover {
+      border-color: #475569;
+      background: rgba(15, 23, 42, 0.9);
+    }
+
+    .form-input:focus {
+      border-color: var(--primary);
+      background: #0f172a;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+    }
+
+    .form-input:focus ~ .input-icon,
+    .input-wrapper:focus-within .input-icon {
+      color: var(--primary);
+    }
+
+    /* Toggle Password Button */
+    .toggle-password-btn {
+      position: absolute;
+      right: 10px;
+      background: transparent;
+      border: none;
+      color: #64748b;
+      padding: 8px 10px;
+      cursor: pointer;
+      font-size: 1rem;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: color 0.2s ease, background-color 0.2s ease;
+      z-index: 1;
+    }
+
+    .toggle-password-btn:hover {
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .toggle-password-btn:focus {
+      outline: none;
+      color: var(--primary);
+    }
+
+    /* Submit Button */
+    .btn-submit {
+      width: 100%;
+      margin-top: 10px;
+      background: var(--primary-gradient);
+      border: none;
+      border-radius: 10px;
+      padding: 13px 20px;
+      color: #ffffff;
+      font-size: 1rem;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      box-shadow: 0 4px 16px rgba(59, 130, 246, 0.35);
+      transition: all 0.25s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-submit::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+      transition: left 0.6s ease;
+    }
+
+    .btn-submit:hover {
+      background: var(--primary-gradient-hover);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 22px rgba(59, 130, 246, 0.48);
+    }
+
+    .btn-submit:hover::after {
+      left: 100%;
+    }
+
+    .btn-submit:active {
+      transform: translateY(1px);
+      box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+    }
+
+    .btn-submit i {
+      transition: transform 0.2s ease;
+    }
+
+    .btn-submit:hover i {
+      transform: translateX(3px);
+    }
+
+    /* Card Footer & Badge */
+    .card-footer {
+      margin-top: 26px;
+      padding-top: 18px;
+      border-top: 1px solid rgba(51, 65, 85, 0.6);
+      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      color: var(--text-muted);
+      font-size: 0.82rem;
+      font-weight: 500;
+    }
+
+    .card-footer i {
+      color: var(--primary);
+      font-size: 0.95rem;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 480px) {
+      body {
+        padding: 16px;
+      }
+      .login-card {
+        padding: 32px 22px 24px 22px;
+        border-radius: 12px;
+      }
+      .brand-title {
+        font-size: 1.35rem;
+      }
+      .brand-subtitle {
+        font-size: 0.86rem;
+      }
+      .icon-badge {
+        width: 60px;
+        height: 60px;
+        margin-bottom: 14px;
+      }
+      .icon-badge i.main-icon {
+        font-size: 26px;
+      }
+      .form-input {
+        padding: 12px 40px 12px 40px;
+        font-size: 0.92rem;
+      }
+      .btn-submit {
+        padding: 12px 18px;
+        font-size: 0.96rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Animated Background Orbs -->
+  <div class="bg-orb bg-orb-1"></div>
+  <div class="bg-orb bg-orb-2"></div>
+
+  <!-- Connected AI Particles Canvas -->
+  <canvas id="particle-canvas"></canvas>
+
+  <!-- Login Card Container -->
+  <div class="login-container">
+    <div class="login-card">
+
+      <!-- Header with Camera & Shield Icon -->
+      <div class="brand-header">
+        <div class="icon-badge" title="AI Face Recognition & Security">
+          <i class="fa-solid fa-camera main-icon"></i>
+          <div class="shield-dot" title="Secure Attendance">
+            <i class="fa-solid fa-shield-halved"></i>
+          </div>
+        </div>
+        <h1 class="brand-title">Smart Classroom Attendance</h1>
+        <p class="brand-subtitle">Sign in to access the dashboard</p>
+      </div>
+
+      <!-- Error Message Area (Jinja2) -->
+      {% if error %}
+      <div class="error-alert" role="alert">
+        <i class="fa-solid fa-circle-exclamation"></i>
+        <span>{{ error }}</span>
+      </div>
+      {% endif %}
+
+      <!-- Login Form -->
+      <form action="/login" method="POST" id="loginForm" autocomplete="on">
+        
+        <!-- Username Field -->
+        <div class="form-group">
+          <label class="form-label" for="username">Username</label>
+          <div class="input-wrapper">
+            <i class="fa-solid fa-user input-icon"></i>
+            <input
+              type="text"
+              id="username"
+              name="username"
+              class="form-input"
+              placeholder="Enter your username"
+              required
+              autofocus
+              autocomplete="username"
+            />
+          </div>
+        </div>
+
+        <!-- Password Field with Toggle Show/Hide -->
+        <div class="form-group">
+          <label class="form-label" for="password">Password</label>
+          <div class="input-wrapper">
+            <i class="fa-solid fa-lock input-icon"></i>
+            <input
+              type="password"
+              id="password"
+              name="password"
+              class="form-input"
+              placeholder="Enter your password"
+              required
+              autocomplete="current-password"
+            />
+            <button
+              type="button"
+              class="toggle-password-btn"
+              id="togglePassword"
+              title="Show / Hide Password"
+              aria-label="Toggle password visibility"
+            >
+              <i class="fa-regular fa-eye" id="eyeIcon"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Submit Button -->
+        <button type="submit" class="btn-submit" id="submitBtn">
+          <span>Sign In</span>
+          <i class="fa-solid fa-arrow-right"></i>
+        </button>
+
+      </form>
+
+      <!-- Footer -->
+      <div class="card-footer">
+        <i class="fa-solid fa-brain"></i>
+        <span>Powered by AI Face Recognition</span>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Interactive Scripts -->
+  <script>
+    // Password visibility toggle
+    const togglePassword = document.getElementById('togglePassword');
+    const passwordInput = document.getElementById('password');
+    const eyeIcon = document.getElementById('eyeIcon');
+
+    if (togglePassword && passwordInput && eyeIcon) {
+      togglePassword.addEventListener('click', function () {
+        const isPassword = passwordInput.getAttribute('type') === 'password';
+        passwordInput.setAttribute('type', isPassword ? 'text' : 'password');
+        
+        if (isPassword) {
+          eyeIcon.classList.remove('fa-eye');
+          eyeIcon.classList.add('fa-eye-slash');
+        } else {
+          eyeIcon.classList.remove('fa-eye-slash');
+          eyeIcon.classList.add('fa-eye');
+        }
+      });
+    }
+
+    // AI Network Floating Particle Background Effect
+    (function () {
+      const canvas = document.getElementById('particle-canvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      let width = (canvas.width = window.innerWidth);
+      let height = (canvas.height = window.innerHeight);
+
+      window.addEventListener('resize', function () {
+        width = canvas.width = window.innerWidth;
+        height = canvas.height = window.innerHeight;
+      });
+
+      const particleCount = Math.min(Math.floor((width * height) / 22000), 55);
+      const particles = [];
+
+      for (let i = 0; i < particleCount; i++) {
+        particles.push({
+          x: Math.random() * width,
+          y: Math.random() * height,
+          vx: (Math.random() - 0.5) * 0.45,
+          vy: (Math.random() - 0.5) * 0.45,
+          radius: Math.random() * 1.8 + 1,
+          alpha: Math.random() * 0.4 + 0.2
+        });
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, width, height);
+
+        // Draw connections
+        for (let i = 0; i < particles.length; i++) {
+          for (let j = i + 1; j < particles.length; j++) {
+            const dx = particles[i].x - particles[j].x;
+            const dy = particles[i].y - particles[j].y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+
+            if (dist < 120) {
+              const alpha = (1 - dist / 120) * 0.16;
+              ctx.strokeStyle = `rgba(59, 130, 246, ${alpha})`;
+              ctx.lineWidth = 1;
+              ctx.beginPath();
+              ctx.moveTo(particles[i].x, particles[i].y);
+              ctx.lineTo(particles[j].x, particles[j].y);
+              ctx.stroke();
+            }
+          }
+        }
+
+        // Draw particles
+        for (let i = 0; i < particles.length; i++) {
+          const p = particles[i];
+          p.x += p.vx;
+          p.y += p.vy;
+
+          if (p.x < 0) p.x = width;
+          else if (p.x > width) p.x = 0;
+
+          if (p.y < 0) p.y = height;
+          else if (p.y > height) p.y = 0;
+
+          ctx.fillStyle = `rgba(147, 197, 253, ${p.alpha})`;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        requestAnimationFrame(draw);
+      }
+
+      draw();
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,184 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Face Recognition Model Training | Smart Attendance</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --border: #334155;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --radius: 12px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; }
+    body { background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
+
+    /* Navbar */
+    .navbar { background: rgba(30, 41, 59, 0.95); backdrop-filter: blur(10px); border-bottom: 1px solid var(--border); padding: 14px 28px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    .brand { display: flex; align-items: center; gap: 12px; font-weight: 700; font-size: 1.15rem; color: #fff; text-decoration: none; }
+    .brand i { color: var(--primary); font-size: 1.4rem; }
+    .nav-links { display: flex; gap: 8px; list-style: none; }
+    .nav-links a { text-decoration: none; color: var(--text-muted); padding: 8px 16px; border-radius: 8px; font-size: 0.9rem; font-weight: 500; transition: all 0.2s; display: flex; align-items: center; gap: 8px; }
+    .nav-links a:hover, .nav-links a.active { color: #fff; background: rgba(59, 130, 246, 0.15); }
+    .nav-links a.active { color: var(--primary); font-weight: 600; }
+
+    /* Layout */
+    .container { max-width: 1080px; width: 100%; margin: 24px auto; padding: 0 20px; flex: 1; display: flex; flex-direction: column; gap: 24px; }
+    .header-section h1 { font-size: 1.7rem; font-weight: 700; }
+    .header-section p { color: var(--text-muted); font-size: 0.95rem; margin-top: 4px; }
+
+    /* Metrics */
+    .metrics-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px; }
+    .metric-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; }
+    .metric-title { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 8px; font-weight: 600; }
+    .metric-val { font-size: 1.8rem; font-weight: 800; color: #fff; }
+
+    .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
+    .card-title { font-size: 1.15rem; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
+    .card-title i { color: var(--primary); }
+
+    .btn { padding: 12px 24px; border-radius: 8px; font-size: 0.95rem; font-weight: 600; cursor: pointer; border: none; transition: all 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-hover); }
+
+    /* Console output */
+    .console-box { background: #0a0f1d; border: 1px solid var(--border); border-radius: 8px; padding: 16px; font-family: monospace; font-size: 0.88rem; color: #38bdf8; min-height: 140px; max-height: 260px; overflow-y: auto; margin-top: 18px; line-height: 1.6; }
+
+    .tips-box { background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.25); border-radius: 10px; padding: 18px; margin-top: 20px; font-size: 0.9rem; line-height: 1.6; }
+    .tips-box h4 { color: #fff; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+    .tips-box ul { padding-left: 20px; color: var(--text-muted); }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="navbar">
+    <a href="/dashboard" class="brand">
+      <i class="fa-solid fa-camera-viewfinder"></i>
+      <span>SmartAttend AI</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="/dashboard"><i class="fa-solid fa-chart-pie"></i> Dashboard</a></li>
+      <li><a href="/attendance"><i class="fa-solid fa-user-check"></i> Live Monitor</a></li>
+      <li><a href="/camera"><i class="fa-solid fa-video"></i> CCTV Settings</a></li>
+      <li><a href="/register"><i class="fa-solid fa-user-plus"></i> Students</a></li>
+      <li><a href="/train" class="active"><i class="fa-solid fa-brain"></i> Model Training</a></li>
+      <li><a href="/reports"><i class="fa-solid fa-file-lines"></i> Reports</a></li>
+    </ul>
+      <a href="/logout" style="text-decoration:none;color:#94a3b8;padding:8px 14px;border-radius:8px;font-size:0.9rem;font-weight:500;transition:all 0.2s;display:flex;align-items:center;gap:8px;margin-left:8px;border:1px solid #334155;" onmouseover="this.style.color='#ef4444';this.style.borderColor='#ef4444';this.style.background='rgba(239,68,68,0.1)'" onmouseout="this.style.color='#94a3b8';this.style.borderColor='#334155';this.style.background='none'"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+  </nav>
+
+  <div class="container">
+    <div class="header-section">
+      <h1>Face Recognition Model Training</h1>
+      <p>Compile facial 128-dimensional biometric embeddings from dataset images for high-accuracy recognition.</p>
+    </div>
+
+    <!-- Status Metrics -->
+    <div class="metrics-row">
+      <div class="metric-card">
+        <div class="metric-title">Face Encodings</div>
+        <div class="metric-val" id="encodingsCount">0</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-title">Trained Students</div>
+        <div class="metric-val" id="studentsCount">0</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-title">Last Trained</div>
+        <div class="metric-val" style="font-size:1.2rem; margin-top:6px;" id="lastTrained">Never</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-title">Encodings File</div>
+        <div class="metric-val" style="font-size:1.2rem; margin-top:6px; color:var(--success);" id="fileStatus">Ready</div>
+      </div>
+    </div>
+
+    <!-- Training Action Card -->
+    <div class="card">
+      <div class="card-title">
+        <i class="fa-solid fa-bolt"></i> Execute Training Pipeline
+      </div>
+
+      <p style="color:var(--text-muted); font-size:0.92rem; margin-bottom:18px;">
+        Clicking the button below parses all photos in the <code>dataset/</code> folder, generates deep neural face encodings, saves them to <code>trainer/encodings.pickle</code>, and automatically reloads the active CCTV live recognition engine.
+      </p>
+
+      <button type="button" class="btn btn-primary" id="trainBtn" style="padding:14px 28px;">
+        <i class="fa-solid fa-arrows-rotate"></i> Retrain Model Now
+      </button>
+
+      <div class="console-box" id="consoleBox">
+        [System] Ready. Model status loaded.
+      </div>
+
+      <div class="tips-box">
+        <h4><i class="fa-solid fa-lightbulb" style="color:var(--warning);"></i> Best Practices for CCTV Recognition Accuracy</h4>
+        <ul>
+          <li><strong>Diverse Lighting & Angles:</strong> Ensure each student's dataset contains straight-on, slight left/right, and slight upward/downward angles matching typical classroom CCTV angles.</li>
+          <li><strong>Resolution:</strong> The Hikvision CCTV sub-stream (<code>102</code>) provides low-latency frames (640x360 or 704x576), perfect for real-time 30 FPS processing without frame lag.</li>
+          <li><strong>Clean Face Visibility:</strong> Avoid strong backlighting or glare directly behind the student when standing before the camera.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const trainBtn = document.getElementById('trainBtn');
+    const consoleBox = document.getElementById('consoleBox');
+
+    function log(msg) {
+      const time = new Date().toLocaleTimeString();
+      consoleBox.innerHTML += `<br>[${time}] ${msg}`;
+      consoleBox.scrollTop = consoleBox.scrollHeight;
+    }
+
+    async function loadStatus() {
+      try {
+        const res = await fetch('/api/train/status');
+        const data = await res.json();
+        document.getElementById('encodingsCount').textContent = data.encodings_count || 0;
+        document.getElementById('studentsCount').textContent = data.enrolled_students || 0;
+        document.getElementById('lastTrained').textContent = data.last_trained || 'Pending';
+        document.getElementById('fileStatus').textContent = data.model_file_exists ? 'Active' : 'Missing';
+      } catch (err) {
+        console.error('Status error:', err);
+      }
+    }
+
+    trainBtn.addEventListener('click', async () => {
+      trainBtn.disabled = true;
+      trainBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Training in progress...`;
+      log("Starting dataset scan and face feature extraction...");
+
+      try {
+        const res = await fetch('/api/train', { method: 'POST' });
+        const result = await res.json();
+        if (res.ok) {
+          log(`COMPLETED: ${result.total_encodings} face encodings generated across ${result.total_students} students (${result.total_images} photos).`);
+          log("Active recognition engine reloaded with fresh vectors.");
+          loadStatus();
+        } else {
+          log(`ERROR: ${result.message || 'Training failed'}`);
+        }
+      } catch (err) {
+        log(`FATAL ERROR: ${err.message}`);
+      } finally {
+        trainBtn.disabled = false;
+        trainBtn.innerHTML = `<i class="fa-solid fa-arrows-rotate"></i> Retrain Model Now`;
+      }
+    });
+
+    loadStatus();
+  </script>
+</body>
+</html>

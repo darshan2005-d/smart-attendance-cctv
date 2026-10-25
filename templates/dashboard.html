@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Smart Attendance AI Dashboard</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --border: #334155;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --radius: 14px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; }
+    body { background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
+
+    /* Navbar */
+    .navbar { background: rgba(30, 41, 59, 0.95); backdrop-filter: blur(10px); border-bottom: 1px solid var(--border); padding: 14px 28px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    .brand { display: flex; align-items: center; gap: 12px; font-weight: 700; font-size: 1.15rem; color: #fff; text-decoration: none; }
+    .brand i { color: var(--primary); font-size: 1.4rem; }
+    .nav-links { display: flex; gap: 8px; list-style: none; }
+    .nav-links a { text-decoration: none; color: var(--text-muted); padding: 8px 16px; border-radius: 8px; font-size: 0.9rem; font-weight: 500; transition: all 0.2s; display: flex; align-items: center; gap: 8px; }
+    .nav-links a:hover, .nav-links a.active { color: #fff; background: rgba(59, 130, 246, 0.15); }
+    .nav-links a.active { color: var(--primary); font-weight: 600; }
+
+    /* Container */
+    .container { max-width: 1360px; width: 100%; margin: 24px auto; padding: 0 20px; flex: 1; display: flex; flex-direction: column; gap: 24px; }
+
+    /* Header */
+    .header-bar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
+    .header-bar h1 { font-size: 1.8rem; font-weight: 800; letter-spacing: -0.5px; }
+    .header-bar p { color: var(--text-muted); font-size: 0.95rem; margin-top: 4px; }
+    .date-badge { background: #1e293b; border: 1px solid var(--border); padding: 8px 16px; border-radius: 10px; font-size: 0.9rem; display: flex; align-items: center; gap: 10px; font-weight: 600; }
+
+    /* KPI Metrics Cards */
+    .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px; }
+    .metric-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px; position: relative; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.15); transition: transform 0.2s; }
+    .metric-card:hover { transform: translateY(-2px); }
+    .metric-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .metric-label { font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+    .metric-icon { width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
+    .metric-val { font-size: 2.2rem; font-weight: 800; color: #fff; line-height: 1; }
+    .metric-sub { font-size: 0.82rem; color: var(--text-muted); margin-top: 8px; display: flex; align-items: center; gap: 6px; }
+
+    /* Colors */
+    .icon-blue { background: rgba(59, 130, 246, 0.15); color: var(--primary); }
+    .icon-green { background: rgba(16, 185, 129, 0.15); color: var(--success); }
+    .icon-amber { background: rgba(245, 158, 11, 0.15); color: var(--warning); }
+    .icon-purple { background: rgba(168, 85, 247, 0.15); color: #c084fc; }
+
+    /* Dashboard Layout 2 Columns */
+    .dashboard-grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 24px; }
+    @media (max-width: 1024px) { .dashboard-grid { grid-template-columns: 1fr; } }
+
+    .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
+    .card-title { font-size: 1.15rem; font-weight: 700; margin-bottom: 18px; display: flex; align-items: center; justify-content: space-between; }
+    
+    /* Live stream widget */
+    .stream-widget { position: relative; width: 100%; height: 310px; background: #000; border-radius: 10px; overflow: hidden; border: 1px solid var(--border); }
+    .stream-widget img { width: 100%; height: 100%; object-fit: contain; }
+    .stream-tag { position: absolute; top: 12px; left: 12px; background: rgba(0,0,0,0.7); backdrop-filter: blur(6px); padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 6px; }
+    .pulse-dot { width: 7px; height: 7px; background: var(--success); border-radius: 50%; animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+    /* Table */
+    .table-responsive { overflow-x: auto; max-height: 440px; }
+    table { width: 100%; border-collapse: collapse; text-align: left; }
+    th { background: #0f172a; color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; padding: 12px 14px; border-bottom: 1px solid var(--border); }
+    td { padding: 12px 14px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); font-size: 0.88rem; }
+    tr:hover { background: rgba(255, 255, 255, 0.02); }
+
+    /* Buttons */
+    .btn { padding: 9px 16px; border-radius: 8px; font-size: 0.88rem; font-weight: 600; cursor: pointer; border: none; transition: all 0.2s; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-secondary { background: #334155; color: #fff; }
+    .btn-secondary:hover { background: #475569; }
+    .btn-sm { padding: 6px 12px; font-size: 0.8rem; }
+
+    /* Quick Action Cards */
+    .actions-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 14px; }
+    .action-pill { background: #0f172a; border: 1px solid var(--border); border-radius: 10px; padding: 14px; text-decoration: none; color: #fff; display: flex; align-items: center; gap: 12px; transition: all 0.2s; }
+    .action-pill:hover { border-color: var(--primary); transform: translateY(-2px); background: rgba(59, 130, 246, 0.08); }
+    .action-pill i { font-size: 1.3rem; color: var(--primary); }
+    .action-pill h4 { font-size: 0.9rem; font-weight: 600; }
+    .action-pill p { font-size: 0.75rem; color: var(--text-muted); }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="navbar">
+    <a href="/dashboard" class="brand">
+      <i class="fa-solid fa-camera-viewfinder"></i>
+      <span>SmartAttend AI</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="/dashboard" class="active"><i class="fa-solid fa-chart-pie"></i> Dashboard</a></li>
+      <li><a href="/attendance"><i class="fa-solid fa-user-check"></i> Live Monitor</a></li>
+      <li><a href="/camera"><i class="fa-solid fa-video"></i> CCTV Settings</a></li>
+      <li><a href="/register"><i class="fa-solid fa-user-plus"></i> Students</a></li>
+      <li><a href="/train"><i class="fa-solid fa-brain"></i> Model Training</a></li>
+      <li><a href="/reports"><i class="fa-solid fa-file-lines"></i> Reports</a></li>
+    </ul>
+      <a href="/logout" style="text-decoration:none;color:#94a3b8;padding:8px 14px;border-radius:8px;font-size:0.9rem;font-weight:500;transition:all 0.2s;display:flex;align-items:center;gap:8px;margin-left:8px;border:1px solid #334155;" onmouseover="this.style.color='#ef4444';this.style.borderColor='#ef4444';this.style.background='rgba(239,68,68,0.1)'" onmouseout="this.style.color='#94a3b8';this.style.borderColor='#334155';this.style.background='none'"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+  </nav>
+
+  <div class="container">
+    <!-- Header -->
+    <div class="header-bar">
+      <div>
+        <h1>Classroom Overview</h1>
+        <p>AI-Powered Face Recognition Attendance & Ethernet CCTV Surveillance System</p>
+      </div>
+      <div class="date-badge">
+        <i class="fa-regular fa-calendar-days" style="color:var(--primary);"></i>
+        <span id="currentDateDisplay">Loading date...</span>
+      </div>
+    </div>
+
+    <!-- KPI Metric Cards -->
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-header">
+          <span class="metric-label">Total Registered</span>
+          <div class="metric-icon icon-blue"><i class="fa-solid fa-users"></i></div>
+        </div>
+        <div class="metric-val" id="totalStudents">0</div>
+        <div class="metric-sub"><i class="fa-solid fa-database"></i> Enrolled in system</div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-header">
+          <span class="metric-label">Present Today</span>
+          <div class="metric-icon icon-green"><i class="fa-solid fa-user-check"></i></div>
+        </div>
+        <div class="metric-val" id="presentCount">0</div>
+        <div class="metric-sub" style="color:var(--success);"><i class="fa-solid fa-circle-check"></i> Verified via CCTV</div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-header">
+          <span class="metric-label">Absent Students</span>
+          <div class="metric-icon icon-amber"><i class="fa-solid fa-user-xmark"></i></div>
+        </div>
+        <div class="metric-val" id="absentCount">0</div>
+        <div class="metric-sub"><i class="fa-solid fa-clock"></i> Not yet detected</div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-header">
+          <span class="metric-label">Attendance Rate</span>
+          <div class="metric-icon icon-purple"><i class="fa-solid fa-chart-line"></i></div>
+        </div>
+        <div class="metric-val" id="attendanceRate">0%</div>
+        <div class="metric-sub"><i class="fa-solid fa-bullseye"></i> Classroom turnout</div>
+      </div>
+    </div>
+
+    <!-- Main Dashboard Grid -->
+    <div class="dashboard-grid">
+      <!-- Left Column: Today's Attendance Table -->
+      <div class="card">
+        <div class="card-title">
+          <span><i class="fa-solid fa-clipboard-user" style="color:var(--primary); margin-right:8px;"></i> Today's Attendance Activity</span>
+          <div style="display:flex; gap:8px;">
+            <a href="/attendance" class="btn btn-secondary btn-sm"><i class="fa-solid fa-expand"></i> Full Monitor</a>
+            <a href="/api/export/csv" class="btn btn-secondary btn-sm"><i class="fa-solid fa-download"></i> CSV</a>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>USN</th>
+                <th>Name</th>
+                <th>Time</th>
+                <th>Method</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="attendanceTbody">
+              <tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding:24px;">Loading attendance records...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Right Column: Live Stream Preview & Quick Actions -->
+      <div style="display:flex; flex-direction:column; gap:20px;">
+        <!-- Live CCTV Feed Widget -->
+        <div class="card">
+          <div class="card-title">
+            <span><i class="fa-solid fa-video" style="color:var(--primary); margin-right:8px;"></i> Live CCTV Stream</span>
+            <span id="camOnlinePill" style="font-size:0.75rem; background:rgba(16,185,129,0.15); color:var(--success); padding:3px 8px; border-radius:12px; font-weight:700;">CONNECTING...</span>
+          </div>
+
+          <div class="stream-widget">
+            <span class="stream-tag"><span class="pulse-dot"></span> <span id="camSourceText">Hikvision CCTV (192.168.1.64)</span></span>
+            <img src="/video_feed" alt="Live Feed Preview" />
+          </div>
+
+          <div style="margin-top:14px; display:flex; flex-direction:column; gap:10px;">
+            <button id="dashScanBtn" class="btn" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color:#fff; font-weight:700; justify-content:center; padding:11px; font-size:0.95rem; box-shadow:0 4px 14px rgba(16,185,129,0.35); border:1px solid rgba(255,255,255,0.15); cursor:pointer;">
+              <i class="fa-solid fa-camera-retro"></i> Scan Student (CCTV)
+            </button>
+            <div id="dashScanFeedback" style="display:none; font-size:0.85rem; padding:8px 12px; border-radius:8px; background:#0b0f19; border:1px solid var(--border); text-align:center;"></div>
+            <div style="display:flex; gap:10px;">
+              <a href="/attendance" class="btn btn-primary" style="flex:1; justify-content:center;">
+                <i class="fa-solid fa-eye"></i> Live Monitor
+              </a>
+              <a href="/camera" class="btn btn-secondary" style="flex:1; justify-content:center;">
+                <i class="fa-solid fa-gear"></i> CCTV Config
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Actions Card -->
+        <div class="card">
+          <div class="card-title" style="margin-bottom:12px;">
+            <span><i class="fa-solid fa-bolt" style="color:var(--warning); margin-right:8px;"></i> Quick System Actions</span>
+          </div>
+
+          <div class="actions-grid">
+            <a href="/register" class="action-pill">
+              <i class="fa-solid fa-user-plus"></i>
+              <div>
+                <h4>Enroll Student</h4>
+                <p>Register face samples</p>
+              </div>
+            </a>
+
+            <a href="/train" class="action-pill">
+              <i class="fa-solid fa-brain"></i>
+              <div>
+                <h4>Retrain Model</h4>
+                <p>Update encodings</p>
+              </div>
+            </a>
+
+            <a href="/camera" class="action-pill">
+              <i class="fa-solid fa-network-wired"></i>
+              <div>
+                <h4>CCTV Settings</h4>
+                <p>IP & RTSP Streams</p>
+              </div>
+            </a>
+
+            <a href="/reports" class="action-pill">
+              <i class="fa-solid fa-file-excel"></i>
+              <div>
+                <h4>History Reports</h4>
+                <p>Export & Analytics</p>
+              </div>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('currentDateDisplay').textContent = new Date().toLocaleDateString('en-US', {
+      weekday: 'long', year: 'numeric', month: 'short', day: 'numeric'
+    });
+
+    async function loadStats() {
+      try {
+        const res = await fetch(`/api/stats?date=${today}`);
+        const data = await res.json();
+        document.getElementById('totalStudents').textContent = data.total_students || 0;
+        document.getElementById('presentCount').textContent = data.present_count || 0;
+        document.getElementById('absentCount').textContent = data.absent_count || 0;
+        document.getElementById('attendanceRate').textContent = `${data.attendance_rate || 0}%`;
+      } catch (err) {
+        console.error('Stats error:', err);
+      }
+    }
+
+    async function loadAttendance() {
+      try {
+        const res = await fetch(`/api/attendance_records?date=${today}`);
+        const rows = await res.json();
+        const tbody = document.getElementById('attendanceTbody');
+
+        if (!rows || rows.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding:30px;">No students marked present yet today.</td></tr>`;
+          return;
+        }
+
+        tbody.innerHTML = rows.map(r => `
+          <tr>
+            <td><strong>${r.usn}</strong></td>
+            <td>${r.name}</td>
+            <td><span style="color:var(--text-muted);">${r.time}</span></td>
+            <td><span style="background:rgba(59,130,246,0.15); color:var(--primary); padding:3px 8px; border-radius:6px; font-size:0.75rem; font-weight:600;">${r.method || 'CCTV'}</span></td>
+            <td><span style="color:var(--success); font-weight:600;"><i class="fa-solid fa-circle-check"></i> Present</span></td>
+          </tr>
+        `).join('');
+      } catch (err) {
+        console.error('Attendance error:', err);
+      }
+    }
+
+    async function checkCamera() {
+      try {
+        const res = await fetch('/api/camera/status');
+        const st = await res.json();
+        const pill = document.getElementById('camOnlinePill');
+        if (st.is_connected) {
+          pill.textContent = 'ONLINE';
+          pill.style.background = 'rgba(16,185,129,0.15)';
+          pill.style.color = '#10b981';
+        } else {
+          pill.textContent = 'CONNECTING...';
+          pill.style.background = 'rgba(245,158,11,0.15)';
+          pill.style.color = '#f59e0b';
+        }
+        document.getElementById('camSourceText').textContent = st.description || 'CCTV Feed';
+      } catch (e) {}
+    }
+
+    // Dashboard CCTV Scan Now
+    const dashScanBtn = document.getElementById('dashScanBtn');
+    const dashScanFeedback = document.getElementById('dashScanFeedback');
+    dashScanBtn.addEventListener('click', async () => {
+      dashScanBtn.disabled = true;
+      dashScanBtn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> Scanning...`;
+      dashScanFeedback.style.display = 'block';
+      dashScanFeedback.style.color = 'var(--text-muted)';
+      dashScanFeedback.textContent = 'Processing frame from CCTV...';
+
+      try {
+        const res = await fetch('/api/camera/scan_now', { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+          if (data.recognized_count > 0) {
+            dashScanFeedback.style.color = 'var(--success)';
+            dashScanFeedback.textContent = '✓ ' + data.message;
+            loadStats();
+            loadAttendance();
+          } else if (data.count > 0) {
+            dashScanFeedback.style.color = 'var(--warning)';
+            dashScanFeedback.textContent = '⚠ ' + data.message;
+          } else {
+            dashScanFeedback.style.color = 'var(--text-muted)';
+            dashScanFeedback.textContent = data.message;
+          }
+        } else {
+          dashScanFeedback.style.color = 'var(--danger)';
+          dashScanFeedback.textContent = data.message || 'Scan failed.';
+        }
+      } catch (err) {
+        dashScanFeedback.style.color = 'var(--danger)';
+        dashScanFeedback.textContent = 'Error: ' + err.message;
+      } finally {
+        dashScanBtn.disabled = false;
+        dashScanBtn.innerHTML = `<i class="fa-solid fa-camera-retro"></i> Scan Student (CCTV)`;
+        setTimeout(() => { dashScanFeedback.style.display = 'none'; }, 6000);
+      }
+    });
+
+    loadStats();
+    loadAttendance();
+    checkCamera();
+
+    setInterval(loadStats, 4000);
+    setInterval(loadAttendance, 4000);
+    setInterval(checkCamera, 4000);
+  </script>
+</body>
+</html>
