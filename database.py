@@ -430,6 +430,9 @@ def get_dashboard_stats(date_str: Optional[str] = None) -> Dict:
             "SELECT COUNT(DISTINCT usn) FROM attendance WHERE date = ? AND LOWER(status) = 'present'",
             (date_str,)
         ).fetchone()[0]
+        total_classes = conn.execute(
+            "SELECT COUNT(DISTINCT date) FROM attendance"
+        ).fetchone()[0]
     finally:
         conn.close()
 
@@ -442,4 +445,152 @@ def get_dashboard_stats(date_str: Optional[str] = None) -> Dict:
         "present_count": present_count,
         "absent_count": absent_count,
         "attendance_rate": rate,
+        "total_classes": total_classes,
     }
+
+
+def get_student_attendance_summary(date_from: Optional[str] = None, date_to: Optional[str] = None) -> Dict:
+    """Calculates overall total number of classes and attendance metrics for each student separately."""
+    conn = get_db_connection()
+    try:
+        # Determine unique class dates
+        date_query = "SELECT DISTINCT date FROM attendance"
+        params: List[str] = []
+        conditions = []
+        if date_from:
+            conditions.append("date >= ?")
+            params.append(date_from)
+        if date_to:
+            conditions.append("date <= ?")
+            params.append(date_to)
+        if conditions:
+            date_query += " WHERE " + " AND ".join(conditions)
+        date_query += " ORDER BY date ASC"
+
+        class_dates = [r[0] for r in conn.execute(date_query, tuple(params)).fetchall()]
+        total_classes = len(class_dates)
+
+        # Get all distinct enrolled students (combine students table with historical attendance)
+        students_rows = conn.execute("""
+            SELECT DISTINCT usn, name FROM (
+                SELECT usn, name FROM students
+                UNION
+                SELECT usn, name FROM attendance WHERE usn IS NOT NULL AND TRIM(usn) != ''
+            ) ORDER BY usn ASC
+        """).fetchall()
+
+        student_list = []
+        for s in students_rows:
+            u = s["usn"]
+            # Look up clean student name
+            resolved_name = resolve_student_name(u, s["name"] or u)
+
+            # Query number of present classes for this student
+            pq = "SELECT COUNT(DISTINCT date) FROM attendance WHERE usn = ? AND LOWER(status) = 'present'"
+            pparams: List[str] = [u]
+            if date_from:
+                pq += " AND date >= ?"
+                pparams.append(date_from)
+            if date_to:
+                pq += " AND date <= ?"
+                pparams.append(date_to)
+
+            present_count = conn.execute(pq, tuple(pparams)).fetchone()[0]
+            absent_count = max(0, total_classes - present_count)
+            pct = round((present_count / total_classes * 100), 1) if total_classes > 0 else 0.0
+
+            if pct >= 75.0:
+                badge = "Safe"
+            elif pct >= 50.0:
+                badge = "Shortage"
+            else:
+                badge = "Critical"
+
+            student_list.append({
+                "usn": u,
+                "name": resolved_name,
+                "total_classes": total_classes,
+                "present_classes": present_count,
+                "absent_classes": absent_count,
+                "attendance_percentage": pct,
+                "status_badge": badge
+            })
+
+        avg_attendance = round(
+            sum(s["attendance_percentage"] for s in student_list) / len(student_list), 1
+        ) if student_list else 0.0
+
+        shortage_count = sum(1 for s in student_list if s["attendance_percentage"] < 75.0)
+
+        return {
+            "total_classes": total_classes,
+            "total_students": len(student_list),
+            "average_attendance": avg_attendance,
+            "shortage_count": shortage_count,
+            "class_dates": class_dates,
+            "students": student_list
+        }
+    finally:
+        conn.close()
+
+
+def get_student_attendance_detail(usn: str) -> Optional[Dict]:
+    """Retrieves full day-by-day attendance history and class breakdown for a specific student."""
+    usn = usn.strip()
+    if not usn:
+        return None
+
+    conn = get_db_connection()
+    try:
+        # All class dates
+        class_dates = [r[0] for r in conn.execute(
+            "SELECT DISTINCT date FROM attendance ORDER BY date DESC"
+        ).fetchall()]
+        total_classes = len(class_dates)
+
+        # Student info
+        resolved_name = resolve_student_name(usn, usn)
+
+        # Attended dates map
+        records_rows = conn.execute(
+            "SELECT date, time, status, method FROM attendance WHERE usn = ? COLLATE NOCASE",
+            (usn,)
+        ).fetchall()
+        attended_map = {r["date"]: dict(r) for r in records_rows}
+
+        history = []
+        present_count = 0
+        for d in class_dates:
+            if d in attended_map:
+                rec = attended_map[d]
+                is_present = rec.get("status", "Present").lower() == "present"
+                if is_present:
+                    present_count += 1
+                history.append({
+                    "date": d,
+                    "status": "Present" if is_present else rec.get("status", "Present"),
+                    "time": rec.get("time", "--:--:--"),
+                    "method": rec.get("method", "FACE")
+                })
+            else:
+                history.append({
+                    "date": d,
+                    "status": "Absent",
+                    "time": "--:--:--",
+                    "method": "Not Detected"
+                })
+
+        absent_count = max(0, total_classes - present_count)
+        pct = round((present_count / total_classes * 100), 1) if total_classes > 0 else 0.0
+
+        return {
+            "usn": usn,
+            "name": resolved_name,
+            "total_classes": total_classes,
+            "present_classes": present_count,
+            "absent_classes": absent_count,
+            "attendance_percentage": pct,
+            "history": history
+        }
+    finally:
+        conn.close()

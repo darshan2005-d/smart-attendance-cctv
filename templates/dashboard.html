@@ -137,6 +137,15 @@
         <div class="metric-sub"><i class="fa-solid fa-database"></i> Enrolled in system</div>
       </div>
 
+      <div class="metric-card" style="cursor:pointer;" onclick="window.location.href='/reports'" title="Click to view all student class details">
+        <div class="metric-header">
+          <span class="metric-label">Total Classes Held</span>
+          <div class="metric-icon icon-purple"><i class="fa-solid fa-chalkboard-user"></i></div>
+        </div>
+        <div class="metric-val" id="totalClasses">0</div>
+        <div class="metric-sub" style="color:#c084fc;"><i class="fa-solid fa-users-viewfinder"></i> Click for student class details</div>
+      </div>
+
       <div class="metric-card">
         <div class="metric-header">
           <span class="metric-label">Present Today</span>
@@ -148,7 +157,7 @@
 
       <div class="metric-card" style="cursor:pointer;" onclick="switchTab('absent')" title="Click to view Absent List">
         <div class="metric-header">
-          <span class="metric-label">Absent Students</span>
+          <span class="metric-label">Absent Today</span>
           <div class="metric-icon icon-amber"><i class="fa-solid fa-user-xmark"></i></div>
         </div>
         <div class="metric-val" id="absentCount">0</div>
@@ -158,10 +167,10 @@
       <div class="metric-card">
         <div class="metric-header">
           <span class="metric-label">Attendance Rate</span>
-          <div class="metric-icon icon-purple"><i class="fa-solid fa-chart-line"></i></div>
+          <div class="metric-icon icon-blue"><i class="fa-solid fa-chart-line"></i></div>
         </div>
         <div class="metric-val" id="attendanceRate">0%</div>
-        <div class="metric-sub"><i class="fa-solid fa-bullseye"></i> Classroom turnout</div>
+        <div class="metric-sub"><i class="fa-solid fa-bullseye"></i> Today's turnout</div>
       </div>
     </div>
 
@@ -269,10 +278,10 @@
             </a>
 
             <a href="/reports" class="action-pill">
-              <i class="fa-solid fa-file-excel"></i>
+              <i class="fa-solid fa-users-viewfinder"></i>
               <div>
-                <h4>History Reports</h4>
-                <p>Export & Analytics</p>
+                <h4>Student Class Reports</h4>
+                <p>Classes attended & breakdown</p>
               </div>
             </a>
           </div>
@@ -292,6 +301,8 @@
         const res = await fetch(`/api/stats?date=${today}`);
         const data = await res.json();
         document.getElementById('totalStudents').textContent = data.total_students || 0;
+        const totalClassesEl = document.getElementById('totalClasses');
+        if (totalClassesEl) totalClassesEl.textContent = data.total_classes || 0;
         document.getElementById('presentCount').textContent = data.present_count || 0;
         document.getElementById('absentCount').textContent = data.absent_count || 0;
         document.getElementById('attendanceRate').textContent = `${data.attendance_rate || 0}%`;

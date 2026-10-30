@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Attendance Reports & Archives | Smart Attendance</title>
+  <title>Student Attendance & Class Reports | Smart Attendance AI</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <style>
     :root {
@@ -32,10 +32,15 @@
     .nav-links a.active { color: var(--primary); font-weight: 600; }
 
     /* Layout */
-    .container { max-width: 1240px; width: 100%; margin: 24px auto; padding: 0 20px; flex: 1; display: flex; flex-direction: column; gap: 24px; }
+    .container { max-width: 1280px; width: 100%; margin: 24px auto; padding: 0 20px; flex: 1; display: flex; flex-direction: column; gap: 24px; }
     .header-bar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
-    .header-bar h1 { font-size: 1.7rem; font-weight: 700; }
+    .header-bar h1 { font-size: 1.75rem; font-weight: 800; }
     .header-bar p { color: var(--text-muted); font-size: 0.95rem; margin-top: 4px; }
+
+    /* View Switcher */
+    .view-switcher { display: flex; background: #0b1120; padding: 4px; border-radius: 10px; border: 1px solid var(--border); width: fit-content; gap: 4px; }
+    .view-btn { padding: 9px 18px; border-radius: 8px; font-size: 0.9rem; font-weight: 600; cursor: pointer; border: none; background: transparent; color: var(--text-muted); display: flex; align-items: center; gap: 8px; transition: all 0.2s; }
+    .view-btn.active { background: var(--primary); color: #fff; box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4); }
 
     /* Filter Card */
     .filter-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
@@ -44,26 +49,56 @@
     .form-control:focus { outline: none; border-color: var(--primary); }
 
     /* Summary Metrics */
-    .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
-    .summary-box { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; text-align: center; }
-    .summary-box .val { font-size: 1.8rem; font-weight: 800; margin-top: 6px; }
-    .summary-box .lbl { font-size: 0.78rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600; }
+    .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+    .summary-box { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; text-align: center; position: relative; overflow: hidden; }
+    .summary-box .val { font-size: 2.1rem; font-weight: 800; margin-top: 6px; }
+    .summary-box .lbl { font-size: 0.78rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; letter-spacing: 0.5px; }
 
     /* Table */
     .table-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px; }
-    .table-container { overflow-x: auto; margin-top: 14px; max-height: 520px; }
+    .table-container { overflow-x: auto; margin-top: 14px; max-height: 560px; }
     table { width: 100%; border-collapse: collapse; text-align: left; }
-    th { background: #0f172a; color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; padding: 12px 16px; border-bottom: 1px solid var(--border); }
-    td { padding: 12px 16px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); font-size: 0.9rem; }
+    th { background: #0f172a; color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; padding: 13px 16px; border-bottom: 1px solid var(--border); letter-spacing: 0.5px; }
+    td { padding: 13px 16px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); font-size: 0.9rem; vertical-align: middle; }
     tr:hover { background: rgba(255, 255, 255, 0.02); }
 
+    /* Progress bar */
+    .progress-bar-container { width: 120px; background: #0f172a; border-radius: 999px; height: 8px; overflow: hidden; display: inline-block; vertical-align: middle; margin-right: 8px; }
+    .progress-bar-fill { height: 100%; border-radius: 999px; }
+
+    /* Badges */
+    .badge { padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; display: inline-flex; align-items: center; gap: 5px; }
+    .badge-safe { background: rgba(16, 185, 129, 0.15); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.3); }
+    .badge-shortage { background: rgba(245, 158, 11, 0.15); color: var(--warning); border: 1px solid rgba(245, 158, 11, 0.3); }
+    .badge-critical { background: rgba(239, 68, 68, 0.15); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.3); }
+
+    /* Buttons */
     .btn { padding: 9px 16px; border-radius: 8px; font-size: 0.88rem; font-weight: 600; cursor: pointer; border: none; transition: all 0.2s; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; }
     .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-hover); }
     .btn-secondary { background: #334155; color: #fff; }
     .btn-secondary:hover { background: #475569; }
+    .btn-danger { background: rgba(239, 68, 68, 0.15); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.3); }
+    .btn-danger:hover { background: rgba(239, 68, 68, 0.25); }
+    .btn-sm { padding: 6px 12px; font-size: 0.8rem; }
+
+    /* Modal Backdrop & Dialog */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; z-index: 999; padding: 20px; }
+    .modal-overlay.active { display: flex; }
+    .modal-dialog { background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; max-width: 680px; width: 100%; max-height: 85vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6); animation: modalIn 0.25s cubic-bezier(0.16, 1, 0.3, 1); }
+    @keyframes modalIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    .modal-header { padding: 20px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+    .modal-header h3 { font-size: 1.25rem; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+    .modal-close { background: none; border: none; color: var(--text-muted); font-size: 1.4rem; cursor: pointer; padding: 4px; }
+    .modal-close:hover { color: #fff; }
+    .modal-body { padding: 24px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 18px; }
+    .modal-chips { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+    .modal-chip { background: #0f172a; border: 1px solid var(--border); border-radius: 8px; padding: 10px; text-align: center; }
+    .modal-chip .val { font-size: 1.3rem; font-weight: 800; margin-top: 4px; }
+    .modal-chip .lbl { font-size: 0.72rem; text-transform: uppercase; color: var(--text-muted); font-weight: 600; }
 
     @media print {
-      .navbar, .filter-card, .btn { display: none !important; }
+      .navbar, .view-switcher, .filter-card, .btn, .modal-overlay { display: none !important; }
       body { background: #fff; color: #000; }
       .table-card, .summary-box { border: 1px solid #ccc; box-shadow: none; background: #fff; }
       th { background: #eee; color: #000; }
@@ -87,107 +122,503 @@
       <li><a href="/train"><i class="fa-solid fa-brain"></i> Model Training</a></li>
       <li><a href="/reports" class="active"><i class="fa-solid fa-file-lines"></i> Reports</a></li>
     </ul>
-      <a href="/logout" style="text-decoration:none;color:#94a3b8;padding:8px 14px;border-radius:8px;font-size:0.9rem;font-weight:500;transition:all 0.2s;display:flex;align-items:center;gap:8px;margin-left:8px;border:1px solid #334155;" onmouseover="this.style.color='#ef4444';this.style.borderColor='#ef4444';this.style.background='rgba(239,68,68,0.1)'" onmouseout="this.style.color='#94a3b8';this.style.borderColor='#334155';this.style.background='none'"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+    <a href="/logout" style="text-decoration:none;color:#94a3b8;padding:8px 14px;border-radius:8px;font-size:0.9rem;font-weight:500;transition:all 0.2s;display:flex;align-items:center;gap:8px;margin-left:8px;border:1px solid #334155;" onmouseover="this.style.color='#ef4444';this.style.borderColor='#ef4444';this.style.background='rgba(239,68,68,0.1)'" onmouseout="this.style.color='#94a3b8';this.style.borderColor='#334155';this.style.background='none'"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
   </nav>
 
   <div class="container">
     <div class="header-bar">
       <div>
-        <h1>Attendance Reports & Historical Archives</h1>
-        <p>Review daily classroom attendance logs, filter by date, and export official CSV reports.</p>
+        <h1>Classroom Attendance Reports</h1>
+        <p>Comprehensive class analytics, individual student breakdown, and official attendance sheets.</p>
       </div>
-      <div>
+      <div style="display:flex; gap:10px;">
         <button class="btn btn-secondary" onclick="window.print()"><i class="fa-solid fa-print"></i> Print Sheet</button>
       </div>
     </div>
 
-    <!-- Filter Card -->
-    <div class="filter-card">
-      <div class="filter-controls">
-        <label style="font-size:0.85rem; font-weight:600; color:var(--text-muted); text-transform:uppercase;">Select Date:</label>
-        <input type="date" id="datePicker" class="form-control" />
-        <input type="text" id="searchFilter" class="form-control" style="width:240px;" placeholder="Search by name or USN..." />
-      </div>
-      <div style="display:flex; gap:8px; flex-wrap:wrap;">
-        <a id="downloadCsvBtn" class="btn btn-primary" href="/api/export/csv">
-          <i class="fa-solid fa-file-arrow-down"></i> Export Present CSV
-        </a>
-        <a id="downloadAbsentCsvBtn" class="btn btn-danger" href="/api/export/absent_csv" style="background:rgba(239,68,68,0.15); color:var(--danger); border:1px solid rgba(239,68,68,0.3);">
-          <i class="fa-solid fa-file-excel"></i> Export Absent CSV
-        </a>
-      </div>
+    <!-- Mode Switcher -->
+    <div class="view-switcher">
+      <button id="viewBtnSummary" class="view-btn active" onclick="switchMainView('summary')">
+        <i class="fa-solid fa-users-viewfinder"></i> Student-Wise Class Breakdown
+      </button>
+      <button id="viewBtnDaily" class="view-btn" onclick="switchMainView('daily')">
+        <i class="fa-solid fa-calendar-day"></i> Daily Attendance Log (By Date)
+      </button>
     </div>
 
-    <!-- Summary Metrics -->
-    <div class="summary-grid">
-      <div class="summary-box">
-        <div class="lbl">Total Enrolled</div>
-        <div class="val" id="sumTotal" style="color:#fff;">0</div>
-      </div>
-      <div class="summary-box">
-        <div class="lbl">Present on Date</div>
-        <div class="val" id="sumPresent" style="color:var(--success);">0</div>
-      </div>
-      <div class="summary-box" style="cursor:pointer;" onclick="setReportTab('absent')" title="Click to view Absent List">
-        <div class="lbl">Absent on Date</div>
-        <div class="val" id="sumAbsent" style="color:var(--warning);">0</div>
-        <span style="font-size:0.72rem; color:var(--text-muted);"><i class="fa-solid fa-list-check"></i> View Absentees</span>
-      </div>
-      </div>
-      <div class="summary-box">
-        <div class="lbl">Attendance Rate</div>
-        <div class="val" id="sumRate" style="color:var(--primary);">0%</div>
-      </div>
-    </div>
+    <!-- ==================================================================== -->
+    <!-- VIEW 1: STUDENT-WISE CLASS ATTENDANCE SUMMARY -->
+    <!-- ==================================================================== -->
+    <div id="viewSummarySection" style="display:flex; flex-direction:column; gap:24px;">
 
-    <!-- Table -->
-    <div class="table-card">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
-        <h3 style="font-size:1.1rem; font-weight:700;">Attendance Log (<span id="selectedDateLabel"></span>)</h3>
-        <div style="display:flex; gap:8px;">
-          <button id="repTabPresent" class="btn btn-sm btn-primary" onclick="setReportTab('present')" style="cursor:pointer; font-size:0.82rem;">
-            <i class="fa-solid fa-user-check"></i> Present (<span id="repPresentCount">0</span>)
-          </button>
-          <button id="repTabAbsent" class="btn btn-sm btn-secondary" onclick="setReportTab('absent')" style="cursor:pointer; font-size:0.82rem;">
-            <i class="fa-solid fa-user-xmark" style="color:var(--danger);"></i> Absent List (<span id="repAbsentCount">0</span>)
-          </button>
+      <!-- KPI Summary Cards -->
+      <div class="summary-grid">
+        <div class="summary-box">
+          <div class="lbl"><i class="fa-solid fa-chalkboard-user" style="color:var(--primary); margin-right:4px;"></i> Total Classes Held</div>
+          <div class="val" id="sumTotalClasses" style="color:var(--primary);">0</div>
+          <span style="font-size:0.75rem; color:var(--text-muted);">Overall class sessions conducted</span>
+        </div>
+
+        <div class="summary-box">
+          <div class="lbl"><i class="fa-solid fa-user-graduate" style="color:#c084fc; margin-right:4px;"></i> Total Students</div>
+          <div class="val" id="sumEnrolledCount" style="color:#c084fc;">0</div>
+          <span style="font-size:0.75rem; color:var(--text-muted);">Enrolled in this course</span>
+        </div>
+
+        <div class="summary-box">
+          <div class="lbl"><i class="fa-solid fa-chart-pie" style="color:var(--success); margin-right:4px;"></i> Average Attendance</div>
+          <div class="val" id="sumAvgAttendance" style="color:var(--success);">0%</div>
+          <span style="font-size:0.75rem; color:var(--text-muted);">Mean attendance across class</span>
+        </div>
+
+        <div class="summary-box">
+          <div class="lbl"><i class="fa-solid fa-triangle-exclamation" style="color:var(--danger); margin-right:4px;"></i> Attendance Shortage</div>
+          <div class="val" id="sumShortageCount" style="color:var(--danger);">0</div>
+          <span style="font-size:0.75rem; color:var(--text-muted);">Students below 75% threshold</span>
         </div>
       </div>
-      <div class="table-container">
-        <table>
-          <thead>
-            <tr id="repTheadRow">
-              <th>USN</th>
-              <th>Student Name</th>
-              <th>Time</th>
-              <th>Capture Method</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody id="reportsTbody">
-            <tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding:24px;">Loading records...</td></tr>
-          </tbody>
-        </table>
+
+      <!-- Filter & Action Card -->
+      <div class="filter-card">
+        <div class="filter-controls">
+          <input type="text" id="summarySearch" class="form-control" style="width:260px;" placeholder="Search student name or USN..." />
+          <select id="summaryFilterStatus" class="form-control">
+            <option value="all">All Students</option>
+            <option value="safe">Eligible (≥ 75%)</option>
+            <option value="shortage">Shortage (50% - 74%)</option>
+            <option value="critical">Critical (&lt; 50%)</option>
+          </select>
+        </div>
+        <div>
+          <a href="/api/export/student_summary_csv" class="btn btn-primary">
+            <i class="fa-solid fa-file-arrow-down"></i> Export Student Summary CSV
+          </a>
+        </div>
+      </div>
+
+      <!-- Master Student Summary Table -->
+      <div class="table-card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
+          <h3 style="font-size:1.15rem; font-weight:700;">Student Class Attendance Details</h3>
+          <span style="font-size:0.85rem; color:var(--text-muted);" id="summaryCountLabel">Showing 0 students</span>
+        </div>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>USN</th>
+                <th>Student Name</th>
+                <th style="text-align:center;">Total Classes</th>
+                <th style="text-align:center;">Present Classes</th>
+                <th style="text-align:center;">Absent Classes</th>
+                <th>Attendance %</th>
+                <th>Status</th>
+                <th style="text-align:center;">Action</th>
+              </tr>
+            </thead>
+            <tbody id="studentSummaryTbody">
+              <tr><td colspan="8" style="text-align:center; color:var(--text-muted); padding:28px;">Loading student attendance records...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ==================================================================== -->
+    <!-- VIEW 2: DAILY ATTENDANCE LOG (BY DATE) -->
+    <!-- ==================================================================== -->
+    <div id="viewDailySection" style="display:none; flex-direction:column; gap:24px;">
+
+      <!-- Filter Card -->
+      <div class="filter-card">
+        <div class="filter-controls">
+          <label style="font-size:0.85rem; font-weight:600; color:var(--text-muted); text-transform:uppercase;">Select Date:</label>
+          <input type="date" id="datePicker" class="form-control" />
+          <input type="text" id="dailySearchFilter" class="form-control" style="width:240px;" placeholder="Search by name or USN..." />
+        </div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <a id="downloadCsvBtn" class="btn btn-primary" href="/api/export/csv">
+            <i class="fa-solid fa-file-arrow-down"></i> Export Present CSV
+          </a>
+          <a id="downloadAbsentCsvBtn" class="btn btn-danger" href="/api/export/absent_csv">
+            <i class="fa-solid fa-file-excel"></i> Export Absent CSV
+          </a>
+        </div>
+      </div>
+
+      <!-- Summary Metrics for Date -->
+      <div class="summary-grid">
+        <div class="summary-box">
+          <div class="lbl">Total Enrolled</div>
+          <div class="val" id="sumTotal" style="color:#fff;">0</div>
+        </div>
+        <div class="summary-box">
+          <div class="lbl">Present on Date</div>
+          <div class="val" id="sumPresent" style="color:var(--success);">0</div>
+        </div>
+        <div class="summary-box" style="cursor:pointer;" onclick="setReportTab('absent')" title="Click to view Absent List">
+          <div class="lbl">Absent on Date</div>
+          <div class="val" id="sumAbsent" style="color:var(--warning);">0</div>
+          <span style="font-size:0.72rem; color:var(--text-muted);"><i class="fa-solid fa-list-check"></i> View Absentees</span>
+        </div>
+        <div class="summary-box">
+          <div class="lbl">Attendance Rate</div>
+          <div class="val" id="sumRate" style="color:var(--primary);">0%</div>
+        </div>
+      </div>
+
+      <!-- Table Card for Date -->
+      <div class="table-card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
+          <h3 style="font-size:1.1rem; font-weight:700;">Daily Attendance Log (<span id="selectedDateLabel"></span>)</h3>
+          <div style="display:flex; gap:8px;">
+            <button id="repTabPresent" class="btn btn-sm btn-primary" onclick="setReportTab('present')" style="cursor:pointer; font-size:0.82rem;">
+              <i class="fa-solid fa-user-check"></i> Present (<span id="repPresentCount">0</span>)
+            </button>
+            <button id="repTabAbsent" class="btn btn-sm btn-secondary" onclick="setReportTab('absent')" style="cursor:pointer; font-size:0.82rem;">
+              <i class="fa-solid fa-user-xmark" style="color:var(--danger);"></i> Absent List (<span id="repAbsentCount">0</span>)
+            </button>
+          </div>
+        </div>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr id="repTheadRow">
+                <th>USN</th>
+                <th>Student Name</th>
+                <th>Time</th>
+                <th>Capture Method</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="dailyReportsTbody">
+              <tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding:24px;">Loading daily records...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- ==================================================================== -->
+  <!-- MODAL: INDIVIDUAL STUDENT ATTENDANCE BREAKDOWN -->
+  <!-- ==================================================================== -->
+  <div id="studentDetailModal" class="modal-overlay" onclick="handleModalOverlayClick(event)">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div>
+          <h3 id="modalStudentName"><i class="fa-solid fa-id-card" style="color:var(--primary);"></i> Student Breakdown</h3>
+          <span id="modalStudentUsn" style="font-size:0.85rem; color:var(--text-muted);">USN: ---</span>
+        </div>
+        <button class="modal-close" onclick="closeStudentModal()">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Stat Chips -->
+        <div class="modal-chips">
+          <div class="modal-chip">
+            <div class="lbl">Total Classes</div>
+            <div class="val" id="modalTotalClasses" style="color:var(--primary);">0</div>
+          </div>
+          <div class="modal-chip">
+            <div class="lbl">Present</div>
+            <div class="val" id="modalPresentClasses" style="color:var(--success);">0</div>
+          </div>
+          <div class="modal-chip">
+            <div class="lbl">Absent</div>
+            <div class="val" id="modalAbsentClasses" style="color:var(--danger);">0</div>
+          </div>
+          <div class="modal-chip">
+            <div class="lbl">Percentage</div>
+            <div class="val" id="modalPercentage" style="color:#fff;">0%</div>
+          </div>
+        </div>
+
+        <!-- Progress bar in modal -->
+        <div>
+          <div style="display:flex; justify-content:space-between; font-size:0.82rem; margin-bottom:6px; color:var(--text-muted);">
+            <span>Class Attendance Rate</span>
+            <span id="modalEligibilityBadge" class="badge">---</span>
+          </div>
+          <div style="background:#0f172a; height:10px; border-radius:999px; overflow:hidden;">
+            <div id="modalProgressBar" style="width:0%; height:100%; border-radius:999px; transition:width 0.4s ease;"></div>
+          </div>
+        </div>
+
+        <!-- Day-by-Day Table -->
+        <h4 style="font-size:0.95rem; font-weight:700; margin-top:8px;">Day-by-Day Class History</h4>
+        <div style="max-height:300px; overflow-y:auto; border:1px solid var(--border); border-radius:8px;">
+          <table>
+            <thead>
+              <tr>
+                <th>Class Date</th>
+                <th>Status</th>
+                <th>Time Recorded</th>
+                <th>Method</th>
+              </tr>
+            </thead>
+            <tbody id="modalHistoryTbody">
+              <tr><td colspan="4" style="text-align:center; color:var(--text-muted); padding:20px;">Loading history...</td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>
 
   <script>
+    // State
+    let activeMainView = 'summary'; // 'summary' or 'daily'
+    let studentSummaryData = null;
+    let presentReportRecords = [];
+    let absentReportRecords = [];
+    let currentReportTab = 'present';
+
+    // Elements
+    const viewSummarySection = document.getElementById('viewSummarySection');
+    const viewDailySection = document.getElementById('viewDailySection');
+    const viewBtnSummary = document.getElementById('viewBtnSummary');
+    const viewBtnDaily = document.getElementById('viewBtnDaily');
+    const summarySearch = document.getElementById('summarySearch');
+    const summaryFilterStatus = document.getElementById('summaryFilterStatus');
+    const studentSummaryTbody = document.getElementById('studentSummaryTbody');
+    const summaryCountLabel = document.getElementById('summaryCountLabel');
+
     const datePicker = document.getElementById('datePicker');
-    const searchFilter = document.getElementById('searchFilter');
-    const reportsTbody = document.getElementById('reportsTbody');
+    const dailySearchFilter = document.getElementById('dailySearchFilter');
+    const dailyReportsTbody = document.getElementById('dailyReportsTbody');
     const selectedDateLabel = document.getElementById('selectedDateLabel');
     const downloadCsvBtn = document.getElementById('downloadCsvBtn');
     const downloadAbsentCsvBtn = document.getElementById('downloadAbsentCsvBtn');
 
-    let currentReportTab = 'present';
-    let presentReportRecords = [];
-    let absentReportRecords = [];
+    // Modal elements
+    const studentDetailModal = document.getElementById('studentDetailModal');
+    const modalStudentName = document.getElementById('modalStudentName');
+    const modalStudentUsn = document.getElementById('modalStudentUsn');
+    const modalTotalClasses = document.getElementById('modalTotalClasses');
+    const modalPresentClasses = document.getElementById('modalPresentClasses');
+    const modalAbsentClasses = document.getElementById('modalAbsentClasses');
+    const modalPercentage = document.getElementById('modalPercentage');
+    const modalProgressBar = document.getElementById('modalProgressBar');
+    const modalEligibilityBadge = document.getElementById('modalEligibilityBadge');
+    const modalHistoryTbody = document.getElementById('modalHistoryTbody');
 
-    // Set today as default
+    // Default today for daily log
     const today = new Date().toISOString().split('T')[0];
     datePicker.value = today;
 
+    // View Switching
+    function switchMainView(view) {
+      activeMainView = view;
+      if (view === 'summary') {
+        viewSummarySection.style.display = 'flex';
+        viewDailySection.style.display = 'none';
+        viewBtnSummary.className = 'view-btn active';
+        viewBtnDaily.className = 'view-btn';
+        fetchStudentSummary();
+      } else {
+        viewSummarySection.style.display = 'none';
+        viewDailySection.style.display = 'flex';
+        viewBtnSummary.className = 'view-btn';
+        viewBtnDaily.className = 'view-btn active';
+        fetchDailyDateData(datePicker.value);
+      }
+    }
+
+    // ========================================================================
+    // VIEW 1: STUDENT SUMMARY LOGIC
+    // ========================================================================
+    async function fetchStudentSummary() {
+      try {
+        const res = await fetch('/api/attendance/summary');
+        if (!res.ok) throw new Error('Failed to load summary');
+        studentSummaryData = await res.json();
+
+        // Update KPI metrics
+        document.getElementById('sumTotalClasses').textContent = studentSummaryData.total_classes || 0;
+        document.getElementById('sumEnrolledCount').textContent = studentSummaryData.total_students || 0;
+        document.getElementById('sumAvgAttendance').textContent = `${studentSummaryData.average_attendance || 0}%`;
+        document.getElementById('sumShortageCount').textContent = studentSummaryData.shortage_count || 0;
+
+        renderStudentSummaryTable();
+      } catch (err) {
+        console.error('Error fetching student summary:', err);
+        studentSummaryTbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--danger); padding:24px;">Failed to load attendance summary. Please try again.</td></tr>`;
+      }
+    }
+
+    function renderStudentSummaryTable() {
+      if (!studentSummaryData || !studentSummaryData.students) return;
+
+      const q = summarySearch.value.toLowerCase().trim();
+      const statusFilter = summaryFilterStatus.value;
+
+      const filtered = studentSummaryData.students.filter(s => {
+        const matchesQuery = (s.name && s.name.toLowerCase().includes(q)) || 
+                             (s.usn && s.usn.toLowerCase().includes(q));
+        if (!matchesQuery) return false;
+
+        if (statusFilter === 'safe') return s.attendance_percentage >= 75.0;
+        if (statusFilter === 'shortage') return s.attendance_percentage >= 50.0 && s.attendance_percentage < 75.0;
+        if (statusFilter === 'critical') return s.attendance_percentage < 50.0;
+        return true;
+      });
+
+      summaryCountLabel.textContent = `Showing ${filtered.length} of ${studentSummaryData.students.length} students`;
+
+      if (filtered.length === 0) {
+        studentSummaryTbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--text-muted); padding:32px;">No students match the selected filter.</td></tr>`;
+        return;
+      }
+
+      studentSummaryTbody.innerHTML = filtered.map(s => {
+        let badgeClass = 'badge-safe';
+        let barColor = 'var(--success)';
+        let statusText = 'Eligible';
+
+        if (s.attendance_percentage >= 75.0) {
+          badgeClass = 'badge-safe';
+          barColor = 'var(--success)';
+          statusText = 'Eligible (Safe)';
+        } else if (s.attendance_percentage >= 50.0) {
+          badgeClass = 'badge-shortage';
+          barColor = 'var(--warning)';
+          statusText = 'Shortage';
+        } else {
+          badgeClass = 'badge-critical';
+          barColor = 'var(--danger)';
+          statusText = 'Critical';
+        }
+
+        return `
+          <tr>
+            <td><strong>${escapeHtml(s.usn)}</strong></td>
+            <td>${escapeHtml(s.name)}</td>
+            <td style="text-align:center; font-weight:700; color:#fff;">${s.total_classes}</td>
+            <td style="text-align:center;">
+              <span style="background:rgba(16,185,129,0.15); color:var(--success); font-weight:700; padding:4px 10px; border-radius:6px; font-size:0.85rem;">
+                <i class="fa-solid fa-check"></i> ${s.present_classes}
+              </span>
+            </td>
+            <td style="text-align:center;">
+              <span style="background:rgba(239,68,68,0.15); color:var(--danger); font-weight:700; padding:4px 10px; border-radius:6px; font-size:0.85rem;">
+                ${s.absent_classes}
+              </span>
+            </td>
+            <td>
+              <div class="progress-bar-container">
+                <div class="progress-bar-fill" style="width:${Math.min(100, Math.max(0, s.attendance_percentage))}%; background:${barColor};"></div>
+              </div>
+              <strong style="font-size:0.88rem;">${s.attendance_percentage.toFixed(1)}%</strong>
+            </td>
+            <td>
+              <span class="badge ${badgeClass}">${statusText}</span>
+            </td>
+            <td style="text-align:center;">
+              <button class="btn btn-sm btn-secondary" onclick="openStudentModal('${escapeHtml(s.usn)}')">
+                <i class="fa-solid fa-eye"></i> View Details
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // ========================================================================
+    // MODAL: INDIVIDUAL STUDENT BREAKDOWN
+    // ========================================================================
+    async function openStudentModal(usn) {
+      studentDetailModal.classList.add('active');
+      modalStudentName.innerHTML = `<i class="fa-solid fa-spinner fa-spin" style="color:var(--primary);"></i> Loading details...`;
+      modalStudentUsn.textContent = `USN: ${usn}`;
+      modalHistoryTbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:var(--text-muted); padding:20px;">Loading student class history...</td></tr>`;
+
+      try {
+        const res = await fetch(`/api/attendance/student/${encodeURIComponent(usn)}`);
+        if (!res.ok) throw new Error('Student not found');
+        const data = await res.json();
+
+        modalStudentName.innerHTML = `<i class="fa-solid fa-id-card" style="color:var(--primary);"></i> ${escapeHtml(data.name)}`;
+        modalStudentUsn.textContent = `USN: ${data.usn}`;
+        modalTotalClasses.textContent = data.total_classes;
+        modalPresentClasses.textContent = data.present_classes;
+        modalAbsentClasses.textContent = data.absent_classes;
+        modalPercentage.textContent = `${data.attendance_percentage.toFixed(1)}%`;
+
+        modalProgressBar.style.width = `${Math.min(100, Math.max(0, data.attendance_percentage))}%`;
+        if (data.attendance_percentage >= 75.0) {
+          modalProgressBar.style.background = 'var(--success)';
+          modalEligibilityBadge.className = 'badge badge-safe';
+          modalEligibilityBadge.textContent = 'Eligible for Exams (>=75%)';
+        } else if (data.attendance_percentage >= 50.0) {
+          modalProgressBar.style.background = 'var(--warning)';
+          modalEligibilityBadge.className = 'badge badge-shortage';
+          modalEligibilityBadge.textContent = 'Attendance Shortage (50-74%)';
+        } else {
+          modalProgressBar.style.background = 'var(--danger)';
+          modalEligibilityBadge.className = 'badge badge-critical';
+          modalEligibilityBadge.textContent = 'Critical Shortage (<50%)';
+        }
+
+        if (!data.history || data.history.length === 0) {
+          modalHistoryTbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:var(--text-muted); padding:20px;">No class sessions recorded yet.</td></tr>`;
+          return;
+        }
+
+        modalHistoryTbody.innerHTML = data.history.map(h => {
+          const isPresent = h.status === 'Present';
+          return `
+            <tr>
+              <td><strong>${h.date}</strong></td>
+              <td>
+                ${isPresent 
+                  ? `<span style="color:var(--success); font-weight:700;"><i class="fa-solid fa-circle-check"></i> Present</span>`
+                  : `<span style="color:var(--danger); font-weight:600;"><i class="fa-solid fa-circle-xmark"></i> Absent</span>`
+                }
+              </td>
+              <td><span style="color:var(--text-muted);">${h.time || '--:--:--'}</span></td>
+              <td>
+                <span style="background:rgba(59,130,246,0.15); color:var(--primary); padding:3px 8px; border-radius:6px; font-size:0.75rem; font-weight:600;">
+                  ${h.method || '-'}
+                </span>
+              </td>
+            </tr>
+          `;
+        }).join('');
+
+      } catch (err) {
+        console.error('Error fetching student detail:', err);
+        modalStudentName.textContent = 'Error Loading Student';
+        modalHistoryTbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:var(--danger); padding:20px;">Failed to load attendance breakdown.</td></tr>`;
+      }
+    }
+
+    function closeStudentModal() {
+      studentDetailModal.classList.remove('active');
+    }
+
+    function handleModalOverlayClick(e) {
+      if (e.target === studentDetailModal) {
+        closeStudentModal();
+      }
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && studentDetailModal.classList.contains('active')) {
+        closeStudentModal();
+      }
+    });
+
+    summarySearch.addEventListener('input', renderStudentSummaryTable);
+    summaryFilterStatus.addEventListener('change', renderStudentSummaryTable);
+
+
+    // ========================================================================
+    // VIEW 2: DAILY ATTENDANCE LOGIC
+    // ========================================================================
     function setReportTab(tab) {
       currentReportTab = tab;
       const pBtn = document.getElementById('repTabPresent');
@@ -215,10 +646,10 @@
           <th>Remarks</th>
         `;
       }
-      renderTable();
+      renderDailyTable();
     }
 
-    async function fetchDateData(dateStr) {
+    async function fetchDailyDateData(dateStr) {
       selectedDateLabel.textContent = dateStr;
       downloadCsvBtn.href = `/api/export/csv?date=${dateStr}`;
       downloadAbsentCsvBtn.href = `/api/export/absent_csv?date=${dateStr}`;
@@ -242,14 +673,14 @@
         document.getElementById('repPresentCount').textContent = stats.present_count || 0;
         document.getElementById('repAbsentCount').textContent = stats.absent_count || 0;
 
-        renderTable();
+        renderDailyTable();
       } catch (err) {
-        console.error('Report fetch error:', err);
+        console.error('Daily report fetch error:', err);
       }
     }
 
-    function renderTable() {
-      const q = searchFilter.value.toLowerCase().trim();
+    function renderDailyTable() {
+      const q = dailySearchFilter.value.toLowerCase().trim();
       const records = (currentReportTab === 'present') ? presentReportRecords : absentReportRecords;
 
       const filtered = records.filter(r => 
@@ -259,28 +690,28 @@
 
       if (filtered.length === 0) {
         if (currentReportTab === 'present') {
-          reportsTbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding:30px;">No students marked present for this date.</td></tr>`;
+          dailyReportsTbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding:30px;">No students marked present for this date.</td></tr>`;
         } else {
-          reportsTbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--success); padding:30px;"><i class="fa-solid fa-circle-check"></i> Zero absentees! All enrolled students were present on this date.</td></tr>`;
+          dailyReportsTbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--success); padding:30px;"><i class="fa-solid fa-circle-check"></i> Zero absentees! All enrolled students were present on this date.</td></tr>`;
         }
         return;
       }
 
       if (currentReportTab === 'present') {
-        reportsTbody.innerHTML = filtered.map(r => `
+        dailyReportsTbody.innerHTML = filtered.map(r => `
           <tr>
-            <td><strong>${r.usn}</strong></td>
-            <td>${r.name}</td>
+            <td><strong>${escapeHtml(r.usn)}</strong></td>
+            <td>${escapeHtml(r.name)}</td>
             <td><span style="color:var(--text-muted);">${r.time}</span></td>
             <td><span style="background:rgba(59,130,246,0.15); color:var(--primary); padding:3px 8px; border-radius:6px; font-size:0.75rem; font-weight:600;">${r.method || 'CCTV'}</span></td>
             <td><span style="color:var(--success); font-weight:600;"><i class="fa-solid fa-circle-check"></i> Present</span></td>
           </tr>
         `).join('');
       } else {
-        reportsTbody.innerHTML = filtered.map(r => `
+        dailyReportsTbody.innerHTML = filtered.map(r => `
           <tr>
-            <td><strong>${r.usn}</strong></td>
-            <td>${r.name}</td>
+            <td><strong>${escapeHtml(r.usn)}</strong></td>
+            <td>${escapeHtml(r.name)}</td>
             <td><span style="color:var(--text-muted);">${r.date}</span></td>
             <td><span style="background:rgba(239,68,68,0.15); color:var(--danger); padding:3px 8px; border-radius:6px; font-size:0.75rem; font-weight:600;"><i class="fa-solid fa-circle-xmark"></i> Absent</span></td>
             <td><span style="color:var(--text-muted); font-size:0.85rem;">Not detected on CCTV</span></td>
@@ -289,11 +720,21 @@
       }
     }
 
-    datePicker.addEventListener('change', () => fetchDateData(datePicker.value));
-    searchFilter.addEventListener('input', () => renderTable());
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
 
-    fetchDateData(today);
+    datePicker.addEventListener('change', () => fetchDailyDateData(datePicker.value));
+    dailySearchFilter.addEventListener('input', () => renderDailyTable());
+
+    // Initial load: start on Student Summary
+    fetchStudentSummary();
   </script>
 </body>
 </html>
-

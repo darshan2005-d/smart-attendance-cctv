@@ -501,6 +501,68 @@ def export_absent_csv_api():
     )
 
 
+@app.route("/api/attendance/summary", methods=["GET"])
+@login_required
+def attendance_summary_api():
+    """Returns overall total number of classes and attendance breakdown for every student."""
+    date_from = request.args.get("date_from")
+    date_to = request.args.get("date_to")
+    summary = database.get_student_attendance_summary(date_from=date_from, date_to=date_to)
+    return jsonify(summary)
+
+
+@app.route("/api/attendance/student/<path:usn>", methods=["GET"])
+@login_required
+def attendance_student_detail_api(usn):
+    """Returns day-by-day attendance history and class breakdown for a specific student."""
+    detail = database.get_student_attendance_detail(usn)
+    if not detail:
+        abort(404, f"Student '{usn}' not found")
+    return jsonify(detail)
+
+
+@app.route("/api/export/student_summary_csv", methods=["GET"])
+@login_required
+def export_student_summary_csv_api():
+    """Exports full student-wise attendance sheet with total and present classes."""
+    date_from = request.args.get("date_from")
+    date_to = request.args.get("date_to")
+    summary = database.get_student_attendance_summary(date_from=date_from, date_to=date_to)
+
+    output = io.StringIO()
+    writer = csv.DictWriter(
+        output,
+        fieldnames=[
+            "USN",
+            "Student Name",
+            "Total Classes Held",
+            "Present Classes",
+            "Absent Classes",
+            "Attendance Percentage (%)",
+            "Status"
+        ]
+    )
+    writer.writeheader()
+    for s in summary.get("students", []):
+        writer.writerow({
+            "USN": s.get("usn", ""),
+            "Student Name": s.get("name", ""),
+            "Total Classes Held": s.get("total_classes", 0),
+            "Present Classes": s.get("present_classes", 0),
+            "Absent Classes": s.get("absent_classes", 0),
+            "Attendance Percentage (%)": f"{s.get('attendance_percentage', 0.0):.1f}%",
+            "Status": s.get("status_badge", "Unknown")
+        })
+
+    output.seek(0)
+    today_str = datetime.now().strftime("%Y-%m-%d")
+    return Response(
+        output.getvalue(),
+        mimetype="text/csv",
+        headers={"Content-Disposition": f"attachment; filename=Student_Attendance_Summary_{today_str}.csv"}
+    )
+
+
 # ============================================================================
 # Health Check
 # ============================================================================
